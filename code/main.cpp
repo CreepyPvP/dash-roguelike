@@ -41,11 +41,22 @@ int main()
         }
     }
 
+    f32 tilesize = 32;
 
     while (renderer_WindowOpen())
     {
         renderer_BeginFrame();
-        renderer_DrawQuad(v2(0, 0), v2(100, 100), v3(1, 1, 1));
+
+        for (u32 x = 0; x < game.width; ++x)
+        {
+            for (u32 y = 0; y < game.width; ++y)
+            {
+                if (game.tiles[x + y * game.width])
+                {
+                    renderer_DrawQuad(v2(x * tilesize , y * tilesize), v2(tilesize), v3(0.2, 0.2, 0.9));
+                }
+            }
+        }
         renderer_EndFrame();
     }
 

@@ -40,6 +40,16 @@ Vertex vertex_buffer[1024];
 u32 draw_call_count;
 DrawCall draw_call_buffer[1024];
 
+struct RenderData
+{
+    Mat4 projection;
+    Mat4 view;
+};
+
+RenderData render_data = {};
+u32 uniform_buffer;
+
+
 // Callacks
 //
 
@@ -202,7 +212,15 @@ void renderer_Initialize()
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 #endif
 
+    glDisable(GL_CULL_FACE);
+
     default_shader = LoadShader("shader/default.vert", "shader/default.frag");
+
+    glGenBuffers(1, &uniform_buffer);
+    glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(RenderData), NULL, GL_STATIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, uniform_buffer);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     glGenVertexArrays(1, &vertex_vao);
     glBindVertexArray(vertex_vao);
@@ -241,15 +259,21 @@ void renderer_EndFrame()
         glfwSetWindowShouldClose(window, true);
     }
 
-    Mat4 projection = Ortho(-window_width / 2.0f, window_width / 2.0f, -window_height / 2.0f, window_height / 2.0f, 0.1, 100);
-    Mat4 view = LookAt(v3(0, 0, 1), v3(0, 0, 0), v3(0, 0, 1));
+    render_data.projection = Ortho(-window_width / 2.0f, window_width / 2.0f, -window_height / 2.0f, window_height / 2.0f, 0.1, 100);
+    render_data.view = LookAt(v3(0, 0, 50), v3(0, 0, 0), v3(0, 1, 0));
 
-    glUseProgram(default_shader.id);
+    glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(RenderData), &render_data);
 
     glBindBuffer(GL_ARRAY_BUFFER, vertex_gpu_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertex_count, vertex_buffer, GL_DYNAMIC_DRAW);
 
+    glViewport(0, 0, window_width, window_height);
+    glClearColor(0.1, 0.1, 0.1, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     glBindVertexArray(vertex_vao);
+    glUseProgram(default_shader.id);
 
     DrawCall *draw = draw_call_buffer;
     for (u32 i = 0; i < draw_call_count; ++i, ++draw)
@@ -292,10 +316,10 @@ void renderer_DrawQuad(V2 topleft, V2 size, V3 color)
     p1->color = color;
 
     Vertex *p2 = AllocVertex();
-    p2->position = v2(topleft.x + size.x, topleft.y + size.y);
+    p2->position = v2(topleft.x, topleft.y + size.y);
     p2->color = color;
 
     Vertex *p3 = AllocVertex();
-    p3->position = v2(topleft.x, topleft.y + size.y);
+    p3->position = v2(topleft.x + size.x, topleft.y + size.y);
     p3->color = color;
 }

@@ -13,6 +13,11 @@ inline V2 v2(f32 x, f32 y)
     return {x, y};
 }
 
+inline V2 v2(f32 x)
+{
+    return {x, x};
+}
+
 struct V3
 {
     f32 x;
@@ -26,6 +31,11 @@ struct V3
 inline V3 v3(f32 x, f32 y, f32 z)
 {
     return {x, y, z};
+}
+
+inline V3 v3(f32 x)
+{
+    return {x, x, x};
 }
 
 inline f32 Dot(V3 a, V3 b)
