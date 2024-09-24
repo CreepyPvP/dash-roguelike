@@ -241,6 +241,9 @@ void renderer_EndFrame()
         glfwSetWindowShouldClose(window, true);
     }
 
+    Mat4 projection = Ortho(-window_width / 2.0f, window_width / 2.0f, -window_height / 2.0f, window_height / 2.0f, 0.1, 100);
+    Mat4 view = LookAt(v3(0, 0, 1), v3(0, 0, 0), v3(0, 0, 1));
+
     glUseProgram(default_shader.id);
 
     glBindBuffer(GL_ARRAY_BUFFER, vertex_gpu_buffer);

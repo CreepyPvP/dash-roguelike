@@ -45,9 +45,7 @@ int main()
     while (renderer_WindowOpen())
     {
         renderer_BeginFrame();
-
         renderer_DrawQuad(v2(0, 0), v2(100, 100), v3(1, 1, 1));
-
         renderer_EndFrame();
     }
 
