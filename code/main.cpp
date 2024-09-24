@@ -2,8 +2,8 @@
 
 #include "defines.h"
 #include "memory.h"
-#include "renderer.h"
 #include "game_math.h"
+#include "renderer.h"
 
 struct Game
 {
