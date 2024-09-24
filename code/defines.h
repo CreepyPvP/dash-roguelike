@@ -14,5 +14,8 @@ typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
 
+typedef float f32;
+typedef double f64;
+
 #define KiloByte(amount) (amount * 1024)
 #define MegaByte(amount) (KiloByte(amount) * 1024)

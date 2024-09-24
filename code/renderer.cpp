@@ -20,13 +20,25 @@ struct Shader
 
 Shader default_shader;
 
-struct GpuBuffer
+struct Vertex
 {
-    u32 id;
+    V2 position;
+    V3 color;
 };
 
-GpuBuffer quad_buffer;
+struct DrawCall
+{
+    u32 offset;
+};
 
+u32 vertex_gpu_buffer;
+u32 vertex_vao;
+
+u32 vertex_count;
+Vertex vertex_buffer[1024];
+
+u32 draw_call_count;
+DrawCall draw_call_buffer[1024];
 
 // Callacks
 //
@@ -191,6 +203,19 @@ void renderer_Initialize()
 #endif
 
     default_shader = LoadShader("shader/default.vert", "shader/default.frag");
+
+    glGenVertexArrays(1, &vertex_vao);
+    glBindVertexArray(vertex_vao);
+
+    glGenBuffers(1, &vertex_gpu_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_gpu_buffer);
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex), (void*) offsetof(Vertex, position));
+    glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(Vertex), (void*) offsetof(Vertex, color));
+
+    glBindVertexArray(0);
 }
 
 void renderer_Shutdown()
@@ -203,12 +228,32 @@ bool renderer_WindowOpen()
     return !glfwWindowShouldClose(window);
 }
 
+void renderer_BeginFrame()
+{
+    vertex_count = 0;
+    draw_call_count = 0;
+}
+
 void renderer_EndFrame()
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(window, true);
     }
+
+    glUseProgram(default_shader.id);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_gpu_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertex_count, vertex_buffer, GL_DYNAMIC_DRAW);
+
+    glBindVertexArray(vertex_vao);
+
+    DrawCall *draw = draw_call_buffer;
+    for (u32 i = 0; i < draw_call_count; ++i, ++draw)
+    {
+        glDrawArrays(GL_TRIANGLE_STRIP, draw->offset, 4);
+    }
+
     glfwSwapBuffers(window);
     glfwPollEvents();
 }
@@ -216,6 +261,38 @@ void renderer_EndFrame()
 // Drawing
 //
 
-void renderer_DrawQuad()
+static inline Vertex *AllocVertex()
 {
+    assert(vertex_count < 1024);
+    return &vertex_buffer[vertex_count++];
+}
+
+static inline DrawCall *StartDrawCall()
+{
+    assert(draw_call_count < 1024);
+    DrawCall *draw = &draw_call_buffer[draw_call_count++];
+    draw->offset = vertex_count;
+    return draw;
+}
+
+
+void renderer_DrawQuad(V2 topleft, V2 size, V3 color)
+{
+    DrawCall *draw = StartDrawCall();
+
+    Vertex *p0 = AllocVertex();
+    p0->position = topleft;
+    p0->color = color;
+
+    Vertex *p1 = AllocVertex();
+    p1->position = v2(topleft.x + size.x, topleft.y);
+    p1->color = color;
+
+    Vertex *p2 = AllocVertex();
+    p2->position = v2(topleft.x + size.x, topleft.y + size.y);
+    p2->color = color;
+
+    Vertex *p3 = AllocVertex();
+    p3->position = v2(topleft.x, topleft.y + size.y);
+    p3->color = color;
 }
