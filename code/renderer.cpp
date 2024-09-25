@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 #include "defines.h"
+#include "game.h"
 #include "platform.h"
 
 GLFWwindow *window;
@@ -49,7 +50,14 @@ struct RenderData
 RenderData render_data = {};
 u32 uniform_buffer;
 
-bool renderer_IsKeyDown(char key)
+u32 debug_ray_count;
+DebugRay debug_rays[64];
+
+
+void DrawRect(V2 botleft, V2 size, V3 color);
+void DrawQuad(V2 p0, V2 p1, V2 p2, V2 p3, V3 color);
+
+bool IsKeyDown(char key)
 {
     // NOTE: GLFW_KEY_W is equal to 'W'. GLFW uses ascii uppercase letters!!!
     return glfwGetKey(window, key) == GLFW_PRESS;
@@ -181,7 +189,7 @@ Shader LoadShader(const char* vertex_file, const char* frag_file)
 // Api lifecycle
 //
 
-void renderer_Initialize()
+void InitializeRenderer()
 {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -241,27 +249,55 @@ void renderer_Initialize()
     glBindVertexArray(0);
 }
 
-void renderer_Shutdown()
+void ShutdownRenderer()
 {
     glfwTerminate();
 }
 
-bool renderer_WindowOpen()
+bool IsWindowOpen()
 {
     return !glfwWindowShouldClose(window);
 }
 
-void renderer_BeginFrame()
-{
-    vertex_count = 0;
-    draw_call_count = 0;
-}
-
-void renderer_EndFrame()
+void DrawFrame()
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(window, true);
+    }
+
+    vertex_count = 0;
+    draw_call_count = 0;
+
+    f32 tilesize = 32;
+
+    // Draw map
+    for (u32 x = 0; x < game.level.width; ++x)
+    {
+        for (u32 y = 0; y < game.level.width; ++y)
+        {
+            if (game.level.tiles[x + y * game.level.width])
+            {
+                DrawRect(v2(x * tilesize , y * tilesize), v2(tilesize), v3(0.2, 0.2, 0.9));
+            }
+        }
+    }
+
+    // Draw player
+    DrawRect(v2(game.player.position.x * tilesize, game.player.position.y * tilesize), v2(tilesize), v3(0.9, 0.2, 0.2));
+
+    // Draw debug rays
+    DebugRay *ray = debug_rays;
+    for (u32 i = 0; i < debug_ray_count; ++i, ++ray)
+    {
+        V2 dir = Norm(ray->p0 - ray->p1);
+        V2 left = v2(dir.y, -dir.x);
+        f32 thickness = 2;
+
+        DrawQuad(ray->p0 * tilesize - left * thickness, 
+                 ray->p0 * tilesize + left * thickness, 
+                 ray->p1 * tilesize - left * thickness, 
+                 ray->p1 * tilesize + left * thickness, v3(0, 1, 0));
     }
 
     render_data.projection = Ortho(-window_width / 2.0f, window_width / 2.0f, -window_height / 2.0f, window_height / 2.0f, 0.1, 100);
@@ -307,23 +343,44 @@ static inline DrawCall *StartDrawCall()
     return draw;
 }
 
-void renderer_DrawQuad(V2 botleft, V2 size, V3 color)
+void DrawQuad(V2 p0, V2 p1, V2 p2, V2 p3, V3 color)
 {
     DrawCall *draw = StartDrawCall();
 
-    Vertex *p0 = AllocVertex();
-    p0->position = botleft;
-    p0->color = color;
+    Vertex *vert0 = AllocVertex();
+    vert0->position = p0;
+    vert0->color = color;
 
-    Vertex *p1 = AllocVertex();
-    p1->position = v2(botleft.x + size.x, botleft.y);
-    p1->color = color;
+    Vertex *vert1 = AllocVertex();
+    vert1->position = p1;
+    vert1->color = color;
 
-    Vertex *p2 = AllocVertex();
-    p2->position = v2(botleft.x, botleft.y + size.y);
-    p2->color = color;
+    Vertex *vert2 = AllocVertex();
+    vert2->position = p2;
+    vert2->color = color;
 
-    Vertex *p3 = AllocVertex();
-    p3->position = v2(botleft.x + size.x, botleft.y + size.y);
-    p3->color = color;
+    Vertex *vert3 = AllocVertex();
+    vert3->position = p3;
+    vert3->color = color;
+}
+
+void DrawRect(V2 botleft, V2 size, V3 color)
+{
+    DrawCall *draw = StartDrawCall();
+
+    Vertex *vert0 = AllocVertex();
+    vert0->position = botleft;
+    vert0->color = color;
+
+    Vertex *vert1 = AllocVertex();
+    vert1->position = v2(botleft.x + size.x, botleft.y);
+    vert1->color = color;
+
+    Vertex *vert2 = AllocVertex();
+    vert2->position = v2(botleft.x, botleft.y + size.y);
+    vert2->color = color;
+
+    Vertex *vert3 = AllocVertex();
+    vert3->position = v2(botleft.x + size.x, botleft.y + size.y);
+    vert3->color = color;
 }

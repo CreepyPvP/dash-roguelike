@@ -13,10 +13,21 @@ V2 V2::operator*(f32 t)
     return {x * t, y * t};
 }
 
+V2 V2::operator/(f32 t)
+{
+    return {x / t, y / t};
+}
+
 V2 V2::operator+(V2 b)
 {
     return {x + b.x, y + b.y};
 }
+
+V2 V2::operator-(V2 b)
+{
+    return {x - b.x, y - b.y};
+}
+
 
 void V2::operator+=(V2 b)
 {
@@ -41,7 +52,13 @@ void V3::operator+=(V3 b)
     z += b.z;
 }
 
-inline V3 Norm(V3 a)
+V2 Norm(V2 a)
+{
+    f32 length = sqrt(a.x * a.x + a.y * a.y);
+    return a / length;
+}
+
+V3 Norm(V3 a)
 {
     f32 length = sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
     return a / length;

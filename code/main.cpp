@@ -4,16 +4,9 @@
 #include "memory.h"
 #include "game_math.h"
 #include "renderer.h"
+#include "game.h"
 
-#define PLAYER_MOVING (1 << 0)
-
-enum Direction
-{
-    Direction_Up,
-    Direction_Left,
-    Direction_Down,
-    Direction_Right,
-};
+Game game;
 
 V2 direction_to_vec[4] = {
     v2(0, 1),
@@ -22,27 +15,13 @@ V2 direction_to_vec[4] = {
     v2(1, 0),
 };
 
-struct Player
-{
-    u32 flags;
-    Direction direction;
-    V2 position;
-};
-
-struct Level
-{
-    u32 width;
-    u32 height;
-    u8 tiles[256];
-};
-
 struct SensorResult
 {
     u32 status;
     V2 hit;
 };
 
-SensorResult CheckSensor(V2 position, Direction direction, Level *level)
+SensorResult ReadSensor(V2 position, Direction direction)
 {
     SensorResult result = {};
 
@@ -55,18 +34,18 @@ SensorResult CheckSensor(V2 position, Direction direction, Level *level)
 
     while (true)
     {
-        if (grid_x < 0 || grid_x >= level->width || grid_y < 0 || grid_y >= level->height)
+        if (grid_x < 0 || grid_x >= game.level.width || grid_y < 0 || grid_y >= game.level.height)
         {
             result.hit = walk_pos;
             result.status = 2;
-            return result;
+            break;
         }
 
-        if (level->tiles[grid_x + grid_y * level->width])
+        if (game.level.tiles[grid_x + grid_y * game.level.width])
         {
             result.hit = walk_pos;
             result.status = 1;
-            return result;
+            break;
         }
 
         grid_x += dir.x;
@@ -74,19 +53,9 @@ SensorResult CheckSensor(V2 position, Direction direction, Level *level)
         walk_pos += dir;
     }
 
-    f32 line_width = 4;
-    if (horizontal)
-    {
-        f32 start = Min(walk_pos.x, position.x);
-        f32 end = Max(walk_pos.x, position.x);
-        renderer_DrawQuad(v2(start, position.y - line_width / 2), v2(end - start, line_width), v3(0, 1, 0));
-    }
-    else
-    {
-        f32 start = Min(walk_pos.y, position.y);
-        f32 end = Max(walk_pos.y, position.y);
-        renderer_DrawQuad(v2(position.x - line_width / 2, start), v2(line_width, end - start), v3(0, 1, 0));
-    }
+    DebugRay *ray = AllocDebugRay();
+    ray->p0 = position;
+    ray->p1 = result.hit;
 
     return result;
 }
@@ -94,23 +63,21 @@ SensorResult CheckSensor(V2 position, Direction direction, Level *level)
 i32 main()
 {
     memory_Initialize();
-    renderer_Initialize();
+    InitializeRenderer();
 
-    Level level = {};
-    level.width = 16;
-    level.height = 16;
+    game = {};
+    game.level.width = 16;
+    game.level.height = 16;
+    game.player.position.x = 2;
+    game.player.position.y = 2;
 
-    Player player = {};
-    player.position.x = 2;
-    player.position.y = 2;
-
-    for (u32 x = 0; x < level.width; ++x)
+    for (u32 x = 0; x < game.level.width; ++x)
     {
-        for (u32 y = 0; y < level.height; ++y)
+        for (u32 y = 0; y < game.level.height; ++y)
         {
             u8 tile = 0;
 
-            if (x == 0 || x == (level.width - 1) || y == 0 || y == (level.height - 1))
+            if (x == 0 || x == (game.level.width - 1) || y == 0 || y == (game.level.height - 1))
             {
                 tile = 1;
             }
@@ -120,71 +87,57 @@ i32 main()
                 tile = 1;
             }
 
-            level.tiles[x + y * level.width] = tile;
+            game.level.tiles[x + y * game.level.width] = tile;
         }
     }
 
-    f32 tilesize = 32;
+    Player *player = &game.player;
 
-    while (renderer_WindowOpen())
+    while (IsWindowOpen())
     {
         f32 delta = 1.0 / 60.0;
 
-        renderer_BeginFrame();
+        debug_ray_count = 0;
          
-        if (renderer_IsKeyDown('R'))
+        if (IsKeyDown('R'))
         {
-            player = {};
-            player.position.x = 2;
-            player.position.y = 2;
+            *player = {};
+            player->position = v2(2);
         }
 
-        if (!player.flags & PLAYER_MOVING)
+        if (!game.player.flags & PLAYER_MOVING)
         {
-            if (renderer_IsKeyDown('W'))
+            if (IsKeyDown('W'))
             {
-                player.flags = player.flags | PLAYER_MOVING;
-                player.direction = Direction_Up;
+                player->flags |= PLAYER_MOVING;
+                player->direction = Direction_Up;
             }
-            else if (renderer_IsKeyDown('S'))
+            else if (IsKeyDown('S'))
             {
-                player.flags = player.flags | PLAYER_MOVING;
-                player.direction = Direction_Down;
+                player->flags |= PLAYER_MOVING;
+                player->direction = Direction_Down;
             }
-            else if (renderer_IsKeyDown('A'))
+            else if (IsKeyDown('A'))
             {
-                player.flags = player.flags | PLAYER_MOVING;
-                player.direction = Direction_Left;
+                player->flags |= PLAYER_MOVING;
+                player->direction = Direction_Left;
             }
-            else if (renderer_IsKeyDown('D'))
+            else if (IsKeyDown('D'))
             {
-                player.flags = player.flags | PLAYER_MOVING;
-                player.direction = Direction_Right;
-            }
-        }
-
-        CheckSensor(player.position, Direction_Right, &level);
-
-        if (player.flags & PLAYER_MOVING && !renderer_IsKeyDown(' '))
-        {
-            player.position += direction_to_vec[player.direction] * delta;
-        }
-
-        for (u32 x = 0; x < level.width; ++x)
-        {
-            for (u32 y = 0; y < level.width; ++y)
-            {
-                if (level.tiles[x + y * level.width])
-                {
-                    renderer_DrawQuad(v2(x * tilesize , y * tilesize), v2(tilesize), v3(0.2, 0.2, 0.9));
-                }
+                player->flags |= PLAYER_MOVING;
+                player->direction = Direction_Right;
             }
         }
 
-        renderer_DrawQuad(v2(player.position.x * tilesize, player.position.y * tilesize), v2(tilesize), v3(0.9, 0.2, 0.2));
+        ReadSensor(game.player.position, Direction_Right);
 
-        renderer_EndFrame();
+        if (player->flags & PLAYER_MOVING && !IsKeyDown(' '))
+        {
+            player->position += direction_to_vec[player->direction] * delta;
+        }
+
+        DrawFrame();
     }
 
-    renderer_Shutdown();
+    ShutdownRenderer();
 }

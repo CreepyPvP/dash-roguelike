@@ -20,7 +20,9 @@ struct V2
     f32 y;
 
     V2 operator*(f32 t);
+    V2 operator/(f32 t);
     V2 operator+(V2 b);
+    V2 operator-(V2 b);
     void operator+=(V2 b);
 };
 
@@ -68,6 +70,8 @@ inline V3 Cross(V3 a, V3 b)
     result.z = a.x * b.y - a.y * b.x;
     return result;
 }
+
+V2 Norm(V2 a);
 
 V3 Norm(V3 a);
 
