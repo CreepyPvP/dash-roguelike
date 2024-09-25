@@ -3,6 +3,27 @@
 #include <math.h>
 
 
+f32 Floor(f32 a)
+{
+    return floor(a);
+}
+
+V2 V2::operator*(f32 t)
+{
+    return {x * t, y * t};
+}
+
+V2 V2::operator+(V2 b)
+{
+    return {x + b.x, y + b.y};
+}
+
+void V2::operator+=(V2 b)
+{
+    x += b.x;
+    y += b.y;
+}
+
 V3 V3::operator/(f32 t)
 {
     return {x / t, y / t, z / t};
@@ -11,6 +32,13 @@ V3 V3::operator/(f32 t)
 V3 V3::operator-(V3 b)
 {
     return {x - b.x, y - b.y, z - b.z};
+}
+
+void V3::operator+=(V3 b)
+{
+    x += b.x;
+    y += b.y;
+    z += b.z;
 }
 
 inline V3 Norm(V3 a)

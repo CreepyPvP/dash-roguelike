@@ -2,10 +2,26 @@
 
 #include "defines.h"
 
+f32 Floor(f32 a);
+
+inline f32 Min(f32 a, f32 b)
+{
+    return a < b ? a : b;
+}
+
+inline f32 Max(f32 a, f32 b)
+{
+    return a < b ? b : a;
+}
+
 struct V2
 {
     f32 x;
     f32 y;
+
+    V2 operator*(f32 t);
+    V2 operator+(V2 b);
+    void operator+=(V2 b);
 };
 
 inline V2 v2(f32 x, f32 y)
@@ -26,6 +42,7 @@ struct V3
 
     V3 operator/(f32 t);
     V3 operator-(V3 b);
+    void operator+=(V3 b);
 };
 
 inline V3 v3(f32 x, f32 y, f32 z)

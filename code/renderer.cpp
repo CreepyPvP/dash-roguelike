@@ -49,6 +49,11 @@ struct RenderData
 RenderData render_data = {};
 u32 uniform_buffer;
 
+bool renderer_IsKeyDown(char key)
+{
+    // NOTE: GLFW_KEY_W is equal to 'W'. GLFW uses ascii uppercase letters!!!
+    return glfwGetKey(window, key) == GLFW_PRESS;
+}
 
 // Callacks
 //
@@ -302,24 +307,23 @@ static inline DrawCall *StartDrawCall()
     return draw;
 }
 
-
-void renderer_DrawQuad(V2 topleft, V2 size, V3 color)
+void renderer_DrawQuad(V2 botleft, V2 size, V3 color)
 {
     DrawCall *draw = StartDrawCall();
 
     Vertex *p0 = AllocVertex();
-    p0->position = topleft;
+    p0->position = botleft;
     p0->color = color;
 
     Vertex *p1 = AllocVertex();
-    p1->position = v2(topleft.x + size.x, topleft.y);
+    p1->position = v2(botleft.x + size.x, botleft.y);
     p1->color = color;
 
     Vertex *p2 = AllocVertex();
-    p2->position = v2(topleft.x, topleft.y + size.y);
+    p2->position = v2(botleft.x, botleft.y + size.y);
     p2->color = color;
 
     Vertex *p3 = AllocVertex();
-    p3->position = v2(topleft.x + size.x, topleft.y + size.y);
+    p3->position = v2(botleft.x + size.x, botleft.y + size.y);
     p3->color = color;
 }
