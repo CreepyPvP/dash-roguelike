@@ -7,5 +7,16 @@ void ShutdownRenderer();
 bool IsWindowOpen();
 void DrawFrame();
 
-bool IsKeyDown(char key);
-bool IsKeyJustDown(char key);
+enum Key
+{
+    Key_W,
+    Key_A,
+    Key_S,
+    Key_D,
+    Key_C,
+    Key_R,
+    Key_Count,
+};
+
+bool IsKeyDown(Key key);
+bool IsKeyJustDown(Key key);

@@ -41,8 +41,6 @@ Vertex vertex_buffer[1024];
 u32 draw_call_count;
 DrawCall draw_call_buffer[1024];
 
-bool prev_key_states[256] = {};
-
 struct RenderData
 {
     Mat4 projection;
@@ -59,13 +57,26 @@ DebugRay debug_rays[64];
 void DrawRect(V2 botleft, V2 size, V3 color);
 void DrawQuad(V2 p0, V2 p1, V2 p2, V2 p3, V3 color);
 
-bool IsKeyDown(char key)
+// Keys ...
+
+char key_mapping[] = {
+    'W',
+    'A',
+    'S',
+    'D',
+    'C',
+    'R',
+};
+
+bool prev_key_states[Key_Count] = {};
+
+bool IsKeyDown(Key key)
 {
     // NOTE: GLFW_KEY_W is equal to 'W'. GLFW uses ascii uppercase letters!!!
-    return glfwGetKey(window, key) == GLFW_PRESS;
+    return glfwGetKey(window, key_mapping[key]) == GLFW_PRESS;
 }
 
-bool IsKeyJustDown(char key)
+bool IsKeyJustDown(Key key)
 {
     return !prev_key_states[key] && IsKeyDown(key);
 }
@@ -329,13 +340,13 @@ void DrawFrame()
         glDrawArrays(GL_TRIANGLE_STRIP, draw->offset, 4);
     }
 
+    for (u32 key = 0; key < Key_Count; ++key)
+    {
+        prev_key_states[key] = IsKeyDown((Key) key);
+    }
+
     glfwSwapBuffers(window);
     glfwPollEvents();
-
-    for (char key = 0; key < 255; ++key)
-    {
-        prev_key_states[key] = IsKeyDown(key);
-    }
 }
 
 // Drawing

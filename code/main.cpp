@@ -98,8 +98,8 @@ i32 main()
         f32 delta = 1.0 / 60.0;
 
         debug_ray_count = 0;
-         
-        if (IsKeyDown('R'))
+
+        if (IsKeyJustDown(Key_R))
         {
             *player = {};
             player->position = v2(2);
@@ -107,22 +107,22 @@ i32 main()
 
         if (!game.player.flags & PLAYER_MOVING)
         {
-            if (IsKeyDown('W'))
+            if (IsKeyJustDown(Key_W))
             {
                 player->flags |= PLAYER_MOVING;
                 player->direction = Direction_Up;
             }
-            else if (IsKeyDown('S'))
+            else if (IsKeyJustDown(Key_S))
             {
                 player->flags |= PLAYER_MOVING;
                 player->direction = Direction_Down;
             }
-            else if (IsKeyDown('A'))
+            else if (IsKeyJustDown(Key_A))
             {
                 player->flags |= PLAYER_MOVING;
                 player->direction = Direction_Left;
             }
-            else if (IsKeyDown('D'))
+            else if (IsKeyJustDown(Key_D))
             {
                 player->flags |= PLAYER_MOVING;
                 player->direction = Direction_Right;
@@ -130,15 +130,15 @@ i32 main()
         }
 
         static Direction direction;
-        if (IsKeyJustDown('C'))
+        if (IsKeyJustDown(Key_C))
         {
             direction = (Direction) ((direction + 1) % 4);
         }
         ReadSensor(game.player.position + v2(0.5), direction);
 
-        if (player->flags & PLAYER_MOVING && !IsKeyDown(' '))
+        if (player->flags & PLAYER_MOVING)
         {
-            player->position += direction_to_vec[player->direction] * delta;
+            player->position += direction_to_vec[player->direction] * delta * 20;
         }
 
         DrawFrame();
