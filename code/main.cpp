@@ -32,6 +32,26 @@ SensorResult ReadSensor(V2 position, Direction direction)
 
     V2 walk_pos = position;
 
+    switch (direction)
+    {
+        case Direction_Up: { 
+            walk_pos.y = Floor(walk_pos.y);
+            break;
+        }
+        case Direction_Down: { 
+            walk_pos.y = Floor(walk_pos.y) + 1;
+            break;
+        }
+        case Direction_Left: { 
+            walk_pos.x = Floor(walk_pos.x) + 1;
+            break;
+        }
+        case Direction_Right: { 
+            walk_pos.x = Floor(walk_pos.x);
+            break;
+        }
+    }
+
     while (true)
     {
         if (grid_x < 0 || grid_x >= game.level.width || grid_y < 0 || grid_y >= game.level.height)
