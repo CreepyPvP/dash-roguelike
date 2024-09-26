@@ -18,6 +18,7 @@ V2 direction_to_vec[4] = {
 struct SensorResult
 {
     u32 status;
+    f32 distance;
     V2 hit;
 };
 
@@ -71,6 +72,15 @@ SensorResult ReadSensor(V2 position, Direction direction)
         grid_x += dir.x;
         grid_y += dir.y;
         walk_pos += dir;
+    }
+
+    if (horizontal)
+    {
+        result.distance = walk_pos.x - position.x;
+    }
+    else
+    {
+        result.distance = walk_pos.y - position.y;
     }
 
     DebugRay *ray = AllocDebugRay();
@@ -149,15 +159,17 @@ i32 main()
             }
         }
 
-        static Direction direction;
-        if (IsKeyJustDown(Key_C))
-        {
-            direction = (Direction) ((direction + 1) % 4);
-        }
-        ReadSensor(game.player.position + v2(0.5), direction);
+        // static Direction direction;
+        // if (IsKeyJustDown(Key_C))
+        // {
+        //     direction = (Direction) ((direction + 1) % 4);
+        // }
+        // ReadSensor(game.player.position + v2(0.5), direction);
 
         if (player->flags & PLAYER_MOVING)
         {
+            SensorResult raycast = ReadSensor(game.player.position, game.player.direction);
+
             player->position += direction_to_vec[player->direction] * delta * 20;
         }
 
