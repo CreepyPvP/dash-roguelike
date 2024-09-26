@@ -129,7 +129,12 @@ i32 main()
             }
         }
 
-        ReadSensor(game.player.position, Direction_Right);
+        static Direction direction;
+        if (IsKeyJustDown('C'))
+        {
+            direction = (Direction) ((direction + 1) % 4);
+        }
+        ReadSensor(game.player.position + v2(0.5), direction);
 
         if (player->flags & PLAYER_MOVING && !IsKeyDown(' '))
         {

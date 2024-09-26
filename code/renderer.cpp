@@ -41,6 +41,8 @@ Vertex vertex_buffer[1024];
 u32 draw_call_count;
 DrawCall draw_call_buffer[1024];
 
+bool prev_key_states[256] = {};
+
 struct RenderData
 {
     Mat4 projection;
@@ -61,6 +63,11 @@ bool IsKeyDown(char key)
 {
     // NOTE: GLFW_KEY_W is equal to 'W'. GLFW uses ascii uppercase letters!!!
     return glfwGetKey(window, key) == GLFW_PRESS;
+}
+
+bool IsKeyJustDown(char key)
+{
+    return !prev_key_states[key] && IsKeyDown(key);
 }
 
 // Callacks
@@ -324,6 +331,11 @@ void DrawFrame()
 
     glfwSwapBuffers(window);
     glfwPollEvents();
+
+    for (char key = 0; key < 255; ++key)
+    {
+        prev_key_states[key] = IsKeyDown(key);
+    }
 }
 
 // Drawing

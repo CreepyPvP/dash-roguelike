@@ -8,3 +8,4 @@ bool IsWindowOpen();
 void DrawFrame();
 
 bool IsKeyDown(char key);
+bool IsKeyJustDown(char key);
