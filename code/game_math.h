@@ -14,6 +14,11 @@ inline f32 Max(f32 a, f32 b)
     return a < b ? b : a;
 }
 
+inline f32 Abs(f32 a)
+{
+    return a > 0 ? a : -a;
+}
+
 struct V2
 {
     f32 x;

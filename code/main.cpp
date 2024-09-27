@@ -76,11 +76,11 @@ SensorResult ReadSensor(V2 position, Direction direction)
 
     if (horizontal)
     {
-        result.distance = walk_pos.x - position.x;
+        result.distance = Abs(walk_pos.x - position.x);
     }
     else
     {
-        result.distance = walk_pos.y - position.y;
+        result.distance = Abs(walk_pos.y - position.y);
     }
 
     DebugRay *ray = AllocDebugRay();
@@ -170,7 +170,14 @@ i32 main()
         {
             SensorResult raycast = ReadSensor(game.player.position, game.player.direction);
 
-            player->position += direction_to_vec[player->direction] * delta * 20;
+            f32 move_dist = delta * 20;
+            if (move_dist >= raycast.distance)
+            {
+                move_dist = raycast.distance;
+                player->flags & ~PLAYER_MOVING;
+            }
+
+	        player->position += direction_to_vec[player->direction] * move_dist;
         }
 
         DrawFrame();
