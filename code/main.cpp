@@ -15,6 +15,13 @@ V2 direction_to_vec[4] = {
     v2(1, 0),
 };
 
+V2 player_sensor_offset[4] = {
+    v2(0.5, 1),
+    v2(0, 0.5),
+    v2(0.5, 0),
+    v2(1, 0.5),
+};
+
 struct SensorResult
 {
     u32 status;
@@ -168,13 +175,13 @@ i32 main()
 
         if (player->flags & PLAYER_MOVING)
         {
-            SensorResult raycast = ReadSensor(game.player.position, game.player.direction);
+            SensorResult raycast = ReadSensor(player->position + player_sensor_offset[player->direction], player->direction);
 
-            f32 move_dist = delta * 20;
+            f32 move_dist = delta * 2;
             if (move_dist >= raycast.distance)
             {
                 move_dist = raycast.distance;
-                player->flags & ~PLAYER_MOVING;
+                player->flags &= ~PLAYER_MOVING;
             }
 
 	        player->position += direction_to_vec[player->direction] * move_dist;
