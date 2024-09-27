@@ -6,6 +6,9 @@
 #include "renderer.h"
 #include "game.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 Game game;
 
 V2 direction_to_vec[4] = {
@@ -97,36 +100,60 @@ SensorResult ReadSensor(V2 position, Direction direction)
     return result;
 }
 
+// level stuff...
+
+char *level_files[] = {
+    "assets/level_0.png",
+};
+
+void LoadLevel(u32 stage)
+{
+    Level *level = &game.level;
+    Player *player = &game.player;
+
+    i32 width;
+    i32 height; 
+    i32 channel = 3;
+
+    u8 *data = stbi_load(level_files[stage], &width, &height, &channel, STBI_rgb);
+    assert(data);
+
+    *level = {};
+    level->width = width;
+    level->height = height;
+    assert(width * height < sizeof(level->tiles));
+
+    *player = {};
+
+    u8 *walk = data;
+
+    // flip y or madness ensues
+    for (i32 y = height - 1; y >= 0; --y)
+    {
+        for (i32 x = 0; x < width; ++x)
+        {
+            if (walk[0] == 0 && walk[1] == 0 && walk[2] == 0)
+            {
+                level->tiles[x + y * width] = 1;
+            }
+
+            if (walk[0] == 255 && walk[1] == 0 && walk[2] == 0)
+            {
+                player->position = v2(x, y);
+            }
+
+            walk += 3;
+        }
+    }
+}
+
 i32 main()
 {
     memory_Initialize();
     InitializeRenderer();
 
     game = {};
-    game.level.width = 16;
-    game.level.height = 16;
-    game.player.position.x = 2;
-    game.player.position.y = 2;
-
-    for (u32 x = 0; x < game.level.width; ++x)
-    {
-        for (u32 y = 0; y < game.level.height; ++y)
-        {
-            u8 tile = 0;
-
-            if (x == 0 || x == (game.level.width - 1) || y == 0 || y == (game.level.height - 1))
-            {
-                tile = 1;
-            }
-
-            if (x == 2 && y == 4)
-            {
-                tile = 1;
-            }
-
-            game.level.tiles[x + y * game.level.width] = tile;
-        }
-    }
+    LoadLevel(0);
 
     Player *player = &game.player;
 
@@ -138,8 +165,7 @@ i32 main()
 
         if (IsKeyJustDown(Key_R))
         {
-            *player = {};
-            player->position = v2(2);
+            LoadLevel(0);
         }
 
         if (!game.player.flags & PLAYER_MOVING)

@@ -290,9 +290,9 @@ void DrawFrame()
     f32 tilesize = 32;
 
     // Draw map
-    for (u32 x = 0; x < game.level.width; ++x)
+    for (i32 x = 0; x < game.level.width; ++x)
     {
-        for (u32 y = 0; y < game.level.width; ++y)
+        for (i32 y = 0; y < game.level.height; ++y)
         {
             if (game.level.tiles[x + y * game.level.width])
             {

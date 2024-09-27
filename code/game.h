@@ -23,8 +23,8 @@ struct Player
 
 struct Level
 {
-    u32 width;
-    u32 height;
+    i32 width;
+    i32 height;
     u8 tiles[256];
 };
 
