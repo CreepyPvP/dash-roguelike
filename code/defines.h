@@ -19,3 +19,5 @@ typedef double f64;
 
 #define KiloByte(amount) (amount * 1024)
 #define MegaByte(amount) (KiloByte(amount) * 1024)
+
+#define lengthof(x) (sizeof(x) / sizeof(x[0]))

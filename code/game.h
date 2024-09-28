@@ -6,6 +6,8 @@
 
 #define PLAYER_MOVING (1 << 0)
 
+#define ENEMY_DEAD (1 << 0)
+
 enum Direction
 {
     Direction_Up,
@@ -21,11 +23,20 @@ struct Player
     V2 position;
 };
 
+struct Enemy
+{
+    u32 flags;
+    V2 position;
+};
+
 struct Level
 {
     i32 width;
     i32 height;
     u8 tiles[256];
+
+    u32 enemy_count;
+    Enemy enemies[64];
 };
 
 struct DebugRay

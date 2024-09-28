@@ -119,3 +119,11 @@ Mat4 Mat4::operator*(Mat4 b)
 
     return res;
 }
+
+bool AABBCollision(V2 bl0, V2 tr0, V2 bl1, V2 tr1)
+{
+    return  bl0.x <= tr1.x &&
+            tr0.x >= bl1.x &&
+            bl0.y <= tr1.y &&
+            tr0.y >= bl1.y;
+}

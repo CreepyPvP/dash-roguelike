@@ -135,9 +135,16 @@ void LoadLevel(u32 stage)
                 level.tiles[x + y * width] = 1;
             }
 
-            if (walk[0] == 255 && walk[1] == 0 && walk[2] == 0)
+            if (walk[0] == 0 && walk[1] == 0 && walk[2] == 255)
             {
                 player.position = v2(x, y);
+            }
+
+            if (walk[0] == 255 && walk[1] == 0 && walk[2] == 0)
+            {
+                assert(level.enemy_count < lengthof(level.enemies));
+                Enemy *enemy = &level.enemies[level.enemy_count++];
+                enemy->position = v2(x, y);
             }
 
             walk += 3;
@@ -210,6 +217,15 @@ i32 main()
             }
 
 	        player.position += direction_to_vec[player.direction] * move_dist;
+        }
+
+        for (u32 i = 0; i < level.enemy_count; ++i)
+        {
+            Enemy *enemy = &level.enemies[i];
+            if (AABBCollision(player.position, player.position + v2(1), enemy->position, enemy->position + v2(1)))
+            {
+                enemy->flags |= ENEMY_DEAD;
+            }
         }
 
         DrawFrame();

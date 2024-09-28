@@ -19,6 +19,11 @@ inline f32 Abs(f32 a)
     return a > 0 ? a : -a;
 }
 
+inline f32 Round(f32 a)
+{
+    return Floor(a + 0.5);
+}
+
 struct V2
 {
     f32 x;
@@ -90,3 +95,4 @@ struct Mat4
 Mat4 Ortho(f32 l, f32 r, f32 b, f32 t, f32 n, f32 f);
 Mat4 LookAt(V3 eye, V3 target, V3 up);
 
+bool AABBCollision(V2 bl0, V2 tr0, V2 bl1, V2 tr1);

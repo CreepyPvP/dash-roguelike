@@ -295,24 +295,37 @@ void DrawFrame()
     f32 tilesize = 32;
 
     // Draw map
-    for (i32 x = 0; x < level.width; ++x)
+    for (u32 x = 0; x < level.width; ++x)
     {
-        for (i32 y = 0; y < level.height; ++y)
+        for (u32 y = 0; y < level.height; ++y)
         {
             if (level.tiles[x + y * level.width])
             {
-                DrawRect(v2(x * tilesize , y * tilesize), v2(tilesize), v3(0.2, 0.2, 0.9));
+                DrawRect(v2(x * tilesize , y * tilesize), v2(tilesize), v3(0.4, 0.4, 0.4));
             }
         }
     }
 
+    // Draw enemies
+    for (u32 i = 0; i < level.enemy_count; ++i)
+    {
+        Enemy *enemy = &level.enemies[i];
+        
+        if (enemy->flags & ENEMY_DEAD)
+        {
+            continue;
+        }
+        
+        DrawRect(v2(enemy->position.x * tilesize, enemy->position.y * tilesize), v2(tilesize), v3(0.9, 0.2, 0.2));
+    }
+
     // Draw player
-    DrawRect(v2(player.position.x * tilesize, player.position.y * tilesize), v2(tilesize), v3(0.9, 0.2, 0.2));
+    DrawRect(v2(player.position.x * tilesize, player.position.y * tilesize), v2(tilesize), v3(0.2, 0.2, 0.9));
 
     // Draw debug rays
-    DebugRay *ray = debug_rays;
-    for (u32 i = 0; i < debug_ray_count; ++i, ++ray)
+    for (u32 i = 0; i < debug_ray_count; ++i)
     {
+        DebugRay *ray = &debug_rays[i];
         V2 dir = Norm(ray->p0 - ray->p1);
         V2 left = v2(dir.y, -dir.x);
         f32 thickness = 2;
@@ -323,7 +336,10 @@ void DrawFrame()
                  ray->p1 * tilesize + left * thickness, v3(0, 1, 0));
     }
 
-    render_data.projection = Ortho(-window_width / 2.0f, window_width / 2.0f, -window_height / 2.0f, window_height / 2.0f, 0.1, 100);
+    f32 aspect = (f32) window_width / (f32) window_height;
+    f32 viewport_height = 13 * tilesize;
+    f32 viewport_width = viewport_height * aspect;
+    render_data.projection = Ortho(0, viewport_width, 0, viewport_height, 0.1, 100);
     render_data.view = LookAt(v3(0, 0, 50), v3(0, 0, 0), v3(0, 1, 0));
 
     glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
