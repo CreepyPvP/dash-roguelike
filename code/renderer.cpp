@@ -81,6 +81,11 @@ bool IsKeyJustDown(Key key)
     return !prev_key_states[key] && IsKeyDown(key);
 }
 
+f32 GetTime()
+{
+    return glfwGetTime();
+}
+
 // Callacks
 //
 
@@ -290,11 +295,11 @@ void DrawFrame()
     f32 tilesize = 32;
 
     // Draw map
-    for (i32 x = 0; x < game.level.width; ++x)
+    for (i32 x = 0; x < level.width; ++x)
     {
-        for (i32 y = 0; y < game.level.height; ++y)
+        for (i32 y = 0; y < level.height; ++y)
         {
-            if (game.level.tiles[x + y * game.level.width])
+            if (level.tiles[x + y * level.width])
             {
                 DrawRect(v2(x * tilesize , y * tilesize), v2(tilesize), v3(0.2, 0.2, 0.9));
             }
@@ -302,7 +307,7 @@ void DrawFrame()
     }
 
     // Draw player
-    DrawRect(v2(game.player.position.x * tilesize, game.player.position.y * tilesize), v2(tilesize), v3(0.9, 0.2, 0.2));
+    DrawRect(v2(player.position.x * tilesize, player.position.y * tilesize), v2(tilesize), v3(0.9, 0.2, 0.2));
 
     // Draw debug rays
     DebugRay *ray = debug_rays;

@@ -9,7 +9,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-Game game;
+Player player;
+Level level;
 
 V2 direction_to_vec[4] = {
     v2(0, 1),
@@ -65,14 +66,14 @@ SensorResult ReadSensor(V2 position, Direction direction)
 
     while (true)
     {
-        if (grid_x < 0 || grid_x >= game.level.width || grid_y < 0 || grid_y >= game.level.height)
+        if (grid_x < 0 || grid_x >= level.width || grid_y < 0 || grid_y >= level.height)
         {
             result.hit = walk_pos;
             result.status = 2;
             break;
         }
 
-        if (game.level.tiles[grid_x + grid_y * game.level.width])
+        if (level.tiles[grid_x + grid_y * level.width])
         {
             result.hit = walk_pos;
             result.status = 1;
@@ -108,9 +109,6 @@ char *level_files[] = {
 
 void LoadLevel(u32 stage)
 {
-    Level *level = &game.level;
-    Player *player = &game.player;
-
     i32 width;
     i32 height; 
     i32 channel = 3;
@@ -118,12 +116,12 @@ void LoadLevel(u32 stage)
     u8 *data = stbi_load(level_files[stage], &width, &height, &channel, STBI_rgb);
     assert(data);
 
-    *level = {};
-    level->width = width;
-    level->height = height;
-    assert(width * height < sizeof(level->tiles));
+    level = {};
+    level.width = width;
+    level.height = height;
+    assert(width * height < sizeof(level.tiles));
 
-    *player = {};
+    player = {};
 
     u8 *walk = data;
 
@@ -134,12 +132,12 @@ void LoadLevel(u32 stage)
         {
             if (walk[0] == 0 && walk[1] == 0 && walk[2] == 0)
             {
-                level->tiles[x + y * width] = 1;
+                level.tiles[x + y * width] = 1;
             }
 
             if (walk[0] == 255 && walk[1] == 0 && walk[2] == 0)
             {
-                player->position = v2(x, y);
+                player.position = v2(x, y);
             }
 
             walk += 3;
@@ -152,14 +150,15 @@ i32 main()
     memory_Initialize();
     InitializeRenderer();
 
-    game = {};
     LoadLevel(0);
 
-    Player *player = &game.player;
+    f32 prev = GetTime();
 
     while (IsWindowOpen())
     {
-        f32 delta = 1.0 / 60.0;
+        f32 current = GetTime();
+        f32 delta = current - prev;
+        prev = current;
 
         debug_ray_count = 0;
 
@@ -168,27 +167,27 @@ i32 main()
             LoadLevel(0);
         }
 
-        if (!game.player.flags & PLAYER_MOVING)
+        if (!player.flags & PLAYER_MOVING)
         {
             if (IsKeyJustDown(Key_W))
             {
-                player->flags |= PLAYER_MOVING;
-                player->direction = Direction_Up;
+                player.flags |= PLAYER_MOVING;
+                player.direction = Direction_Up;
             }
             else if (IsKeyJustDown(Key_S))
             {
-                player->flags |= PLAYER_MOVING;
-                player->direction = Direction_Down;
+                player.flags |= PLAYER_MOVING;
+                player.direction = Direction_Down;
             }
             else if (IsKeyJustDown(Key_A))
             {
-                player->flags |= PLAYER_MOVING;
-                player->direction = Direction_Left;
+                player.flags |= PLAYER_MOVING;
+                player.direction = Direction_Left;
             }
             else if (IsKeyJustDown(Key_D))
             {
-                player->flags |= PLAYER_MOVING;
-                player->direction = Direction_Right;
+                player.flags |= PLAYER_MOVING;
+                player.direction = Direction_Right;
             }
         }
 
@@ -197,20 +196,20 @@ i32 main()
         // {
         //     direction = (Direction) ((direction + 1) % 4);
         // }
-        // ReadSensor(game.player.position + v2(0.5), direction);
+        // ReadSensor(player.position + v2(0.5), direction);
 
-        if (player->flags & PLAYER_MOVING)
+        if (player.flags & PLAYER_MOVING)
         {
-            SensorResult raycast = ReadSensor(player->position + player_sensor_offset[player->direction], player->direction);
+            SensorResult raycast = ReadSensor(player.position + player_sensor_offset[player.direction], player.direction);
 
-            f32 move_dist = delta * 2;
+            f32 move_dist = delta * 20;
             if (move_dist >= raycast.distance)
             {
                 move_dist = raycast.distance;
-                player->flags &= ~PLAYER_MOVING;
+                player.flags &= ~PLAYER_MOVING;
             }
 
-	        player->position += direction_to_vec[player->direction] * move_dist;
+	        player.position += direction_to_vec[player.direction] * move_dist;
         }
 
         DrawFrame();

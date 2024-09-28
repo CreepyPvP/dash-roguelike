@@ -20,3 +20,5 @@ enum Key
 
 bool IsKeyDown(Key key);
 bool IsKeyJustDown(Key key);
+
+f32 GetTime();

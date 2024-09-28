@@ -28,19 +28,14 @@ struct Level
     u8 tiles[256];
 };
 
-struct Game
-{
-    Player player;
-    Level level;
-};
-
 struct DebugRay
 {
     V2 p0;
     V2 p1;
 };
 
-extern Game game;
+extern Player player;
+extern Level level;
 
 extern u32 debug_ray_count;
 extern DebugRay debug_rays[64];
