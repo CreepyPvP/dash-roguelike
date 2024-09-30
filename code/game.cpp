@@ -1,10 +1,11 @@
 #include <stdio.h>
 
 #include "defines.h"
+#include "game.h"
 #include "memory.h"
 #include "game_math.h"
 #include "renderer.h"
-#include "game.h"
+#include "platform.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -150,86 +151,77 @@ void LoadLevel(u32 stage)
             walk += 3;
         }
     }
+
+    stbi_image_free(data);
 }
 
-i32 main()
+void InitializeGame()
 {
     memory_Initialize();
     InitializeRenderer();
-
     LoadLevel(0);
+}
 
-    f32 prev = GetTime();
+void UpdateGame(f32 delta)
+{
+    debug_ray_count = 0;
 
-    while (IsWindowOpen())
+    if (IsKeyJustDown(Key_R))
     {
-        f32 current = GetTime();
-        f32 delta = current - prev;
-        prev = current;
-
-        debug_ray_count = 0;
-
-        if (IsKeyJustDown(Key_R))
-        {
-            LoadLevel(0);
-        }
-
-        if (!player.flags & PLAYER_MOVING)
-        {
-            if (IsKeyJustDown(Key_W))
-            {
-                player.flags |= PLAYER_MOVING;
-                player.direction = Direction_Up;
-            }
-            else if (IsKeyJustDown(Key_S))
-            {
-                player.flags |= PLAYER_MOVING;
-                player.direction = Direction_Down;
-            }
-            else if (IsKeyJustDown(Key_A))
-            {
-                player.flags |= PLAYER_MOVING;
-                player.direction = Direction_Left;
-            }
-            else if (IsKeyJustDown(Key_D))
-            {
-                player.flags |= PLAYER_MOVING;
-                player.direction = Direction_Right;
-            }
-        }
-
-        // static Direction direction;
-        // if (IsKeyJustDown(Key_C))
-        // {
-        //     direction = (Direction) ((direction + 1) % 4);
-        // }
-        // ReadSensor(player.position + v2(0.5), direction);
-
-        if (player.flags & PLAYER_MOVING)
-        {
-            SensorResult raycast = ReadSensor(player.position + player_sensor_offset[player.direction], player.direction);
-
-            f32 move_dist = delta * 20;
-            if (move_dist >= raycast.distance)
-            {
-                move_dist = raycast.distance;
-                player.flags &= ~PLAYER_MOVING;
-            }
-
-	        player.position += direction_to_vec[player.direction] * move_dist;
-        }
-
-        for (u32 i = 0; i < level.enemy_count; ++i)
-        {
-            Enemy *enemy = &level.enemies[i];
-            if (AABBCollision(player.position, player.position + v2(1), enemy->position, enemy->position + v2(1)))
-            {
-                enemy->flags |= ENEMY_DEAD;
-            }
-        }
-
-        DrawFrame();
+        LoadLevel(0);
     }
 
-    ShutdownRenderer();
+    if (!player.flags & PLAYER_MOVING)
+    {
+        if (IsKeyJustDown(Key_W))
+        {
+            player.flags |= PLAYER_MOVING;
+            player.direction = Direction_Up;
+        }
+        else if (IsKeyJustDown(Key_S))
+        {
+            player.flags |= PLAYER_MOVING;
+            player.direction = Direction_Down;
+        }
+        else if (IsKeyJustDown(Key_A))
+        {
+            player.flags |= PLAYER_MOVING;
+            player.direction = Direction_Left;
+        }
+        else if (IsKeyJustDown(Key_D))
+        {
+            player.flags |= PLAYER_MOVING;
+            player.direction = Direction_Right;
+        }
+    }
+
+    // static Direction direction;
+    // if (IsKeyJustDown(Key_C))
+    // {
+    //     direction = (Direction) ((direction + 1) % 4);
+    // }
+    // ReadSensor(player.position + v2(0.5), direction);
+
+    if (player.flags & PLAYER_MOVING)
+    {
+        SensorResult raycast = ReadSensor(player.position + player_sensor_offset[player.direction], player.direction);
+
+        f32 move_dist = delta * 20;
+        if (move_dist >= raycast.distance)
+        {
+            move_dist = raycast.distance;
+            player.flags &= ~PLAYER_MOVING;
+        }
+
+        player.position += direction_to_vec[player.direction] * move_dist;
+    }
+
+    for (u32 i = 0; i < level.enemy_count; ++i)
+    {
+        Enemy *enemy = &level.enemies[i];
+        if (AABBCollision(player.position, player.position + v2(1), enemy->position, enemy->position + v2(1)))
+        {
+            enemy->flags |= ENEMY_DEAD;
+        }
+    }
 }
