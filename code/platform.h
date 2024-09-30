@@ -1,6 +1,8 @@
 #pragma once
 
+#include "defines.h"
 #include "memory.h"
+#include "game_math.h"
 
 struct FileRead
 {
@@ -10,6 +12,8 @@ struct FileRead
 
 FileRead ReadFile(const char *filename, Arena *arena);
 
+// Inputs...
+//
 
 enum Key
 {
@@ -22,10 +26,28 @@ enum Key
     Key_Count,
 };
 
-bool IsKeyDown(Key key);
-bool IsKeyJustDown(Key key);
+struct GameInput
+{
+    f32 time;
+    f32 delta;
+    u32 key_states;
+    u32 prev_key_states;
+};
 
-f32 GetTime();
+extern GameInput *input;
+
+inline bool KeyDown(Key key)
+{
+    return input->key_states & (1 << key);
+}
+
+inline bool KeyJustDown(Key key)
+{
+    return input->key_states && (1 << key) && !(input->prev_key_states && (1 << key));
+}
+
+// Renderer api...
+//
 
 struct Vertex
 {
@@ -33,27 +55,19 @@ struct Vertex
     V3 color;
 };
 
-struct DebugRay
+struct MultiDraw
 {
-    V2 p0;
-    V2 p1;
+    u32 primitive_count;
+    u32 *offsets;
+    u32 *vertex_counts;
 };
 
 struct RenderData
 {
-    struct 
-    {
-        Mat4 projection;
-        Mat4 view;
-    } ubo;
-    
-    u32 debug_ray_count;
-    DebugRay debug_rays[64];
+    MultiDraw debug_rays;
+    MultiDraw level;
+    MultiDraw enemies;
 
     u32 vertex_count;
     Vertex *vertex_buffer;
-
-
 };
-
-extern RenderData *render_data;

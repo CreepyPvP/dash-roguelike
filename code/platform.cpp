@@ -6,6 +6,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "renderer.h"
+
 GLFWwindow *window;
 i32 window_width = 920;
 i32 window_height = 680;
@@ -162,6 +164,8 @@ i32 main()
 #endif
 
     InitializeRenderer();
+
+    Arena game_memory = InitializeArena();
 
     while (!glfwWindowShouldClose(window))
     {

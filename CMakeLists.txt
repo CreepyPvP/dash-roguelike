@@ -25,7 +25,17 @@ add_subdirectory(external/glfw)
 add_subdirectory(external/glad)
 
 # platform layer
-add_executable(platform code/platform.cpp code/platform.h code/defines.h code/memory.h code/memory.cpp code/renderer.h code/renderer.cpp)
+add_executable(platform 
+    code/platform.h 
+    code/platform.cpp 
+    code/defines.h 
+    code/memory.h 
+    code/memory.cpp 
+    code/renderer.h 
+    code/opengl_renderer.cpp
+    code/game_math.h
+    code/game_math.cpp
+)
 
 target_include_directories(platform 
     PUBLIC external
@@ -33,6 +43,8 @@ target_include_directories(platform
 )
 
 target_link_libraries(platform glfw opengl32 glad)
+
+target_compile_definitions(platform PUBLIC PLATFORM)
 
 # game
 add_library(game SHARED 
@@ -44,7 +56,8 @@ add_library(game SHARED
     code/stb_image.h 
     code/game.cpp 
     code/game_math.cpp 
-    code/memory.cpp )
+    code/memory.cpp 
+)
 
 target_include_directories(game 
     PUBLIC external

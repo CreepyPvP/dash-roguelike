@@ -41,9 +41,3 @@ struct Level
 
 extern Player player;
 extern Level level;
-
-inline DebugRay *AllocDebugRay()
-{
-    assert(debug_ray_count < 64);
-    return &debug_rays[debug_ray_count++];
-}

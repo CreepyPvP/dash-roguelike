@@ -13,6 +13,8 @@
 Player player;
 Level level;
 
+GameInput *input;
+
 V2 direction_to_vec[4] = {
     v2(0, 1),
     v2(-1, 0),
@@ -95,9 +97,9 @@ SensorResult ReadSensor(V2 position, Direction direction)
         result.distance = Abs(walk_pos.y - position.y);
     }
 
-    DebugRay *ray = AllocDebugRay();
-    ray->p0 = position;
-    ray->p1 = result.hit;
+    // DebugRay *ray = AllocDebugRay();
+    // ray->p0 = position;
+    // ray->p1 = result.hit;
 
     return result;
 }
@@ -161,33 +163,33 @@ void InitializeGame()
     LoadLevel(0);
 }
 
-void UpdateGame(f32 delta)
+void UpdateGame(GameInput *input_data)
 {
-    debug_ray_count = 0;
+    input = input_data;
 
-    if (IsKeyJustDown(Key_R))
+    if (KeyJustDown(Key_R))
     {
         LoadLevel(0);
     }
 
     if (!player.flags & PLAYER_MOVING)
     {
-        if (IsKeyJustDown(Key_W))
+        if (KeyJustDown(Key_W))
         {
             player.flags |= PLAYER_MOVING;
             player.direction = Direction_Up;
         }
-        else if (IsKeyJustDown(Key_S))
+        else if (KeyJustDown(Key_S))
         {
             player.flags |= PLAYER_MOVING;
             player.direction = Direction_Down;
         }
-        else if (IsKeyJustDown(Key_A))
+        else if (KeyJustDown(Key_A))
         {
             player.flags |= PLAYER_MOVING;
             player.direction = Direction_Left;
         }
-        else if (IsKeyJustDown(Key_D))
+        else if (KeyJustDown(Key_D))
         {
             player.flags |= PLAYER_MOVING;
             player.direction = Direction_Right;
@@ -195,7 +197,7 @@ void UpdateGame(f32 delta)
     }
 
     // static Direction direction;
-    // if (IsKeyJustDown(Key_C))
+    // if (KeyJustDown(Key_C))
     // {
     //     direction = (Direction) ((direction + 1) % 4);
     // }
@@ -205,7 +207,7 @@ void UpdateGame(f32 delta)
     {
         SensorResult raycast = ReadSensor(player.position + player_sensor_offset[player.direction], player.direction);
 
-        f32 move_dist = delta * 20;
+        f32 move_dist = input->delta * 20;
         if (move_dist >= raycast.distance)
         {
             move_dist = raycast.distance;
