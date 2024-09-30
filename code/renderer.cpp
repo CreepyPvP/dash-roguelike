@@ -38,12 +38,6 @@ Vertex vertex_buffer[1024];
 u32 draw_call_count;
 DrawCall draw_call_buffer[1024];
 
-struct RenderData
-{
-    Mat4 projection;
-    Mat4 view;
-};
-
 RenderData render_data = {};
 u32 uniform_buffer;
 

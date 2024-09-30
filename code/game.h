@@ -39,17 +39,8 @@ struct Level
     Enemy enemies[64];
 };
 
-struct DebugRay
-{
-    V2 p0;
-    V2 p1;
-};
-
 extern Player player;
 extern Level level;
-
-extern u32 debug_ray_count;
-extern DebugRay debug_rays[64];
 
 inline DebugRay *AllocDebugRay()
 {

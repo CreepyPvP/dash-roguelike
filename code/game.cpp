@@ -158,7 +158,6 @@ void LoadLevel(u32 stage)
 void InitializeGame()
 {
     memory_Initialize();
-    InitializeRenderer();
     LoadLevel(0);
 }
 

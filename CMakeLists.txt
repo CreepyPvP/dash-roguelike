@@ -25,7 +25,7 @@ add_subdirectory(external/glfw)
 add_subdirectory(external/glad)
 
 # platform layer
-add_executable(platform code/platform.cpp code/platform.h code/defines.h code/memory.h code/memory.cpp)
+add_executable(platform code/platform.cpp code/platform.h code/defines.h code/memory.h code/memory.cpp code/renderer.h code/renderer.cpp)
 
 target_include_directories(platform 
     PUBLIC external
@@ -41,17 +41,12 @@ add_library(game SHARED
     code/game_math.h 
     code/platform.h 
     code/memory.h 
-    code/renderer.h 
     code/stb_image.h 
     code/game.cpp 
     code/game_math.cpp 
-    code/memory.cpp 
-    code/renderer.cpp)
+    code/memory.cpp )
 
 target_include_directories(game 
     PUBLIC external
-    PUBLIC external/glad/include
     PUBLIC code
 )
-
-target_link_libraries(game opengl32)

@@ -161,6 +161,8 @@ i32 main()
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 #endif
 
+    InitializeRenderer();
+
     while (!glfwWindowShouldClose(window))
     {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -172,6 +174,8 @@ i32 main()
         {
             prev_key_states[key] = IsKeyDown((Key) key);
         }
+
+        DrawFrame(window_width, window_height);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
