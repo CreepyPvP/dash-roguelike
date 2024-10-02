@@ -27,11 +27,11 @@ add_subdirectory(external/glad)
 # platform layer
 add_executable(platform 
     code/platform.h 
-    code/platform.cpp 
+    code/win32_platform.cpp 
     code/defines.h 
     code/memory.h 
     code/memory.cpp 
-    code/renderer.h 
+    code/renderer_backend.h 
     code/opengl_renderer.cpp
     code/game_math.h
     code/game_math.cpp

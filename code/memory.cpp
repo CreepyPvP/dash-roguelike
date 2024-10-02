@@ -5,14 +5,6 @@
 
 Arena scratch = {};
 
-Arena InitializeArena()
-{
-    Arena arena = {};
-    arena.capacity = MegaByte(4);
-    arena.memory = (u8 *) malloc(arena.capacity);
-    return arena;
-}
-
 TempMemory BeginTempRegion(Arena *arena)
 {
     TempMemory temp = {};

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "game_math.h"
+#include "memory.h"
+#include "platform.h"
 
 #include <assert.h>
 
@@ -39,5 +41,14 @@ struct Level
     Enemy enemies[64];
 };
 
+struct GameState
+{
+    Arena memory;
+    RenderData render_data;
+};
+
 extern Player player;
 extern Level level;
+
+extern GameInput *input;
+extern GameState *state;

@@ -59,12 +59,12 @@ struct MultiDraw
 {
     u32 primitive_count;
     u32 *offsets;
-    u32 *vertex_counts;
+    u32 *counts;
 };
 
 struct RenderData
 {
-    MultiDraw debug_rays;
+    MultiDraw debug;
     MultiDraw level;
     MultiDraw enemies;
 

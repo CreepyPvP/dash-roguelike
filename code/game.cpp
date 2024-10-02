@@ -4,7 +4,6 @@
 #include "game.h"
 #include "memory.h"
 #include "game_math.h"
-#include "renderer.h"
 #include "platform.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -21,6 +20,34 @@ Player player;
 Level level;
 
 GameInput *input;
+GameState *state;
+
+// Rendering stuff...
+
+struct MultiDrawBuffer
+{
+    u32 primitive_count;
+    u32 offsets[128];
+    u32 counts[128];
+};
+
+u32 vertex_count;
+Vertex vertex_buffer[1024];
+
+MultiDrawBuffer level_buffer;
+MultiDrawBuffer debug_buffer;
+MultiDrawBuffer enemy_buffer;
+
+inline MultiDraw BufferToDraw(MultiDrawBuffer *buffer)
+{
+    MultiDraw draw = {};
+    draw.primitive_count = buffer->primitive_count;
+    draw.offsets = buffer->offsets;
+    draw.counts = buffer->counts;
+    return draw;
+}
+
+// Level stuff...
 
 V2 direction_to_vec[4] = {
     v2(0, 1),
@@ -164,14 +191,28 @@ void LoadLevel(u32 stage)
     stbi_image_free(data);
 }
 
-void GameInitialize(void *memory, u64 memory_size)
+void GameInitialize(u8 *memory, u64 memory_size)
 {
+    state = (GameState *) memory;
+    *state = {};
+
+    Arena *arena = (Arena *) memory;
+    arena->memory = memory;
+    arena->capacity = memory_size;
+    arena->offset = sizeof(GameState);
+
     LoadLevel(0);
 }
 
 RenderData *GameUpdate(GameInput *input_data, void *memory)
 {
     input = input_data;
+    state = (GameState *) memory;
+
+    vertex_count = {};
+    level_buffer = {};
+    debug_buffer = {};
+    enemy_buffer = {};
 
     if (KeyJustDown(Key_R))
     {
@@ -232,5 +273,13 @@ RenderData *GameUpdate(GameInput *input_data, void *memory)
         }
     }
 
-    return 0;
+    RenderData *render = &state->render_data;
+
+    render->vertex_count = vertex_count;
+    render->vertex_buffer = vertex_buffer;
+    render->debug = BufferToDraw(&debug_buffer);
+    render->level = BufferToDraw(&level_buffer);
+    render->enemies = BufferToDraw(&enemy_buffer);
+
+    return render;
 }

@@ -7,7 +7,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "renderer.h"
+#include "renderer_backend.h"
 
 GLFWwindow *window;
 i32 window_width = 920;
@@ -130,7 +130,9 @@ void APIENTRY DebugOutput(GLenum source,
 
 i32 main()
 {
-    scratch = InitializeArena();
+    scratch = {};
+    scratch.capacity = MegaByte(1);
+    scratch.memory = (u8*) malloc(sizeof(scratch.capacity));
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -168,7 +170,8 @@ i32 main()
 
     InitializeRenderer();
 
-    Arena game_memory = InitializeArena();
+    u64 game_memory_size = MegaByte(10);
+    u8 *game_memory = (u8 *) malloc(game_memory_size);
 
     HMODULE game_code = LoadLibrary("game.dll");
     assert(game_code);
