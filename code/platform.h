@@ -74,4 +74,4 @@ struct RenderData
 
 
 typedef RenderData *GameUpdateCall(GameInput *input);
-typedef void GameInitializeCall():
+typedef void GameInitializeCall();

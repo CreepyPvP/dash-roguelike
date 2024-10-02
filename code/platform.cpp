@@ -178,12 +178,12 @@ i32 main()
 
     game_initialize();
 
-    f32 prev_time = GetTime();
+    f32 prev_time = glfwGetTime();
     u32 prev_key_states = 0;
 
     while (!glfwWindowShouldClose(window))
     {
-        f32 time = GetTime();
+        f32 time = glfwGetTime();
         f32 delta = time - prev_time;
         prev_time = time;
 
@@ -192,15 +192,10 @@ i32 main()
             glfwSetWindowShouldClose(window, true);
         }
 
-        for (u32 key = 0; key < Key_Count; ++key)
-        {
-            prev_key_states[key] = IsKeyDown((Key) key);
-        }
-
         GameInput input = {};
-        input.time = time();
+        input.time = time;
         input.delta = delta;
-        input.prev_key_states = prev_input;
+        input.prev_key_states = prev_key_states;
         for (u32 i = 0; i < Key_Count; ++i)
         {
             if (glfwGetKey(window, key_mapping[i]) == GLFW_PRESS)

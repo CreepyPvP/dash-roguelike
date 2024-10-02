@@ -13,8 +13,8 @@
 // NOTE: Cpp context causes name mangling. sad :(
 extern "C"
 {
-    __declspec(dllexport) RenderData *GameUpdate(GameInput *input_data);
-    __declspec(dllexport) void *GameInitialize();
+    __declspec(dllexport) RenderData *GameUpdate(GameInput *input_data, void *memory);
+    __declspec(dllexport) void GameInitialize(void *memory, u64 memory_size);
 }
 
 Player player;
@@ -164,12 +164,12 @@ void LoadLevel(u32 stage)
     stbi_image_free(data);
 }
 
-void GameInitialize()
+void GameInitialize(void *memory, u64 memory_size)
 {
     LoadLevel(0);
 }
 
-RenderData *GameUpdate(GameInput *input_data)
+RenderData *GameUpdate(GameInput *input_data, void *memory)
 {
     input = input_data;
 
