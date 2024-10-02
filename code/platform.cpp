@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include <windows.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -129,6 +130,8 @@ void APIENTRY DebugOutput(GLenum source,
 
 i32 main()
 {
+    scratch = InitializeArena();
+
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
@@ -167,8 +170,23 @@ i32 main()
 
     Arena game_memory = InitializeArena();
 
+    HMODULE game_code = LoadLibrary("game.dll");
+    assert(game_code);
+    GameUpdateCall *game_update = (GameUpdateCall *) GetProcAddress(game_code, "GameUpdate");
+    GameInitializeCall *game_initialize = (GameInitializeCall *) GetProcAddress(game_code, "GameInitialize");
+    assert(game_update && game_initialize);
+
+    game_initialize();
+
+    f32 prev_time = GetTime();
+    u32 prev_key_states = 0;
+
     while (!glfwWindowShouldClose(window))
     {
+        f32 time = GetTime();
+        f32 delta = time - prev_time;
+        prev_time = time;
+
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         {
             glfwSetWindowShouldClose(window, true);
@@ -179,7 +197,22 @@ i32 main()
             prev_key_states[key] = IsKeyDown((Key) key);
         }
 
-        DrawFrame(window_width, window_height);
+        GameInput input = {};
+        input.time = time();
+        input.delta = delta;
+        input.prev_key_states = prev_input;
+        for (u32 i = 0; i < Key_Count; ++i)
+        {
+            if (glfwGetKey(window, key_mapping[i]) == GLFW_PRESS)
+            {
+                input.key_states |= (1 << i);
+            }
+        }
+        prev_key_states = input.key_states;
+
+        RenderData *render_data = game_update(&input);
+
+        DrawFrame(render_data, window_width, window_height);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

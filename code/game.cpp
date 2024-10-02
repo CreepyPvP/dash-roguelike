@@ -10,6 +10,13 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+// NOTE: Cpp context causes name mangling. sad :(
+extern "C"
+{
+    __declspec(dllexport) RenderData *GameUpdate(GameInput *input_data);
+    __declspec(dllexport) void *GameInitialize();
+}
+
 Player player;
 Level level;
 
@@ -157,13 +164,12 @@ void LoadLevel(u32 stage)
     stbi_image_free(data);
 }
 
-void InitializeGame()
+void GameInitialize()
 {
-    memory_Initialize();
     LoadLevel(0);
 }
 
-void UpdateGame(GameInput *input_data)
+RenderData *GameUpdate(GameInput *input_data)
 {
     input = input_data;
 
@@ -225,4 +231,6 @@ void UpdateGame(GameInput *input_data)
             enemy->flags |= ENEMY_DEAD;
         }
     }
+
+    return 0;
 }

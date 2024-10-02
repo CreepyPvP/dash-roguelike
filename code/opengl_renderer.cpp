@@ -118,7 +118,7 @@ void InitializeRenderer()
     glBindVertexArray(0);
 }
 
-void DrawFrame(i32 window_width, i32 window_height)
+void DrawFrame(RenderData *render_data, i32 window_width, i32 window_height)
 {
     f32 tilesize = 32;
 

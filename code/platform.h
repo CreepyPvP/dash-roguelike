@@ -71,3 +71,7 @@ struct RenderData
     u32 vertex_count;
     Vertex *vertex_buffer;
 };
+
+
+typedef RenderData *GameUpdateCall(GameInput *input);
+typedef void GameInitializeCall():

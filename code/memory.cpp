@@ -5,11 +5,6 @@
 
 Arena scratch = {};
 
-void memory_Initialize()
-{
-    scratch = InitializeArena();
-}
-
 Arena InitializeArena()
 {
     Arena arena = {};
