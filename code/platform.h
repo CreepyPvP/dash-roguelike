@@ -57,9 +57,9 @@ struct Vertex
 
 struct MultiDraw
 {
-    u32 primitive_count;
-    u32 *offsets;
-    u32 *counts;
+    i32 primitive_count;
+    i32 *offsets;
+    i32 *counts;
 };
 
 struct RenderData

@@ -26,9 +26,9 @@ GameState *state;
 
 struct MultiDrawBuffer
 {
-    u32 primitive_count;
-    u32 offsets[128];
-    u32 counts[128];
+    i32 primitive_count;
+    i32 offsets[128];
+    i32 counts[128];
 };
 
 u32 vertex_count;
@@ -162,8 +162,7 @@ void LoadLevel(u32 stage)
 
     u8 *walk = data;
 
-    // flip y or madness ensues
-    for (i32 y = height - 1; y >= 0; --y)
+    for (i32 y = 0; y < height; ++y)
     {
         for (i32 x = 0; x < width; ++x)
         {
@@ -272,8 +271,54 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
         }
     }
 
-    RenderData *render = &state->render_data;
+    // We render at 960 x 540
+    // 0,0 ------------> 960,0
+    // \
+    // \ each tile is 32 x 32
+    // \ 
+    // \
+    // 0,540
 
+    for (u32 y = 0; y < level->height; ++y)
+    {
+        for (u32 x = 0; x < level->width; ++x)
+        {
+            if (level->tiles[x + y * level->width])
+            {
+                assert(vertex_count + 4 <= lengthof(vertex_buffer));
+
+                V3 color = v3(0.6);
+
+                Vertex *p0 = &vertex_buffer[vertex_count];
+                p0->position = v2(x * 32, y * 32);
+                p0->color = color;
+
+                Vertex *p1 = &vertex_buffer[vertex_count + 1];
+                p1->position = v2(x * 32 + 32, y * 32);
+                p1->color = color;
+
+                Vertex *p2 = &vertex_buffer[vertex_count + 2];
+                p2->position = v2(x * 32, y * 32 + 32);
+                p2->color = color;
+
+                Vertex *p3 = &vertex_buffer[vertex_count + 3];
+                p3->position = v2(x * 32 + 32, y * 32 + 32);
+                p3->color = color;
+
+                assert(level_buffer.primitive_count < lengthof(level_buffer.offsets));
+                u32 primitive = level_buffer.primitive_count;
+                level_buffer.offsets[primitive] = vertex_count;
+                level_buffer.counts[primitive] = 4;
+
+                vertex_count += 4;
+                level_buffer.primitive_count++;
+
+                // DrawQuad(x * 32, y * 32, 32, 32, v3(0.6));
+            }
+        }
+    }
+
+    RenderData *render = &state->render_data;
     render->vertex_count = vertex_count;
     render->vertex_buffer = vertex_buffer;
     render->debug = BufferToDraw(&debug_buffer);

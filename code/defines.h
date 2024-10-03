@@ -21,9 +21,3 @@ typedef double f64;
 #define MegaByte(amount) (KiloByte(amount) * 1024)
 
 #define lengthof(x) (sizeof(x) / sizeof(x[0]))
-
-#ifdef PLATFORM
-#define API __declspec(dllexport)
-#else
-#define API __declspec(dllimport)
-#endif

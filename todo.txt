@@ -3,4 +3,9 @@
 * actually render it
 * reload game code
 
+1920 x 1080 full hd
+960 x 540
+=> 32 x 32 tiles
+=> 30 x 16 grid
+
 Read dll export table with `Dumpbin game.dll /EXPORTS`

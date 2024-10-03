@@ -166,16 +166,16 @@ void DrawFrame(RenderData *render_data, i32 window_width, i32 window_height)
     // }
 
     f32 aspect = (f32) window_width / (f32) window_height;
-    f32 viewport_height = 13 * tilesize;
-    f32 viewport_width = viewport_height * aspect;
-    uniforms.projection = Ortho(0, viewport_width, 0, viewport_height, 0.1, 100);
+    f32 viewport_height = 540;
+    f32 viewport_width = 960;
+    uniforms.projection = Ortho(0, viewport_width, viewport_height, 0, 0.1, 100);
     uniforms.view = LookAt(v3(0, 0, 50), v3(0, 0, 0), v3(0, 1, 0));
 
     glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UniformBuffer), &uniforms);
 
-    // glBindBuffer(GL_ARRAY_BUFFER, vertex_gpu_buffer);
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertex_count, vertex_buffer, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_gpu_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * render_data->vertex_count, render_data->vertex_buffer, GL_DYNAMIC_DRAW);
 
     glViewport(0, 0, window_width, window_height);
     glClearColor(0.1, 0.1, 0.1, 1.0);
@@ -184,7 +184,7 @@ void DrawFrame(RenderData *render_data, i32 window_width, i32 window_height)
     glBindVertexArray(vertex_vao);
     glUseProgram(default_shader.id);
 
-    // Draw all the stuff here
+    glMultiDrawArrays(GL_TRIANGLE_STRIP, render_data->level.offsets, render_data->level.counts, render_data->level.primitive_count);
 }
 
 // Drawing
