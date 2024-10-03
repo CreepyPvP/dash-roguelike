@@ -8,8 +8,8 @@ Arena scratch = {};
 TempMemory BeginTempRegion(Arena *arena)
 {
     TempMemory temp = {};
-    temp.arena = &scratch;
-    temp.offset = scratch.offset;
+    temp.arena = arena;
+    temp.offset = arena->offset;
     return temp;
 }
 

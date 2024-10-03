@@ -45,10 +45,10 @@ struct GameState
 {
     Arena memory;
     RenderData render_data;
-};
 
-extern Player player;
-extern Level level;
+    Player player;
+    Level level;
+};
 
 extern GameInput *input;
 extern GameState *state;

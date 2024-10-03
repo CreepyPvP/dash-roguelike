@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.25)
 project(engine)
 
 set(ROOT_DIR ${PROJECT_SOURCE_DIR})
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 # add_definitions( -DSUPPORT_FILEFORMAT_PNG )
 # add_subdirectory(${RAYLIB_DIR})
@@ -42,7 +43,7 @@ target_include_directories(platform
     PUBLIC code
 )
 
-target_link_libraries(platform glfw opengl32 glad)
+target_link_libraries(platform glfw opengl32 glad user32)
 
 target_compile_definitions(platform PUBLIC PLATFORM)
 

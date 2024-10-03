@@ -72,6 +72,5 @@ struct RenderData
     Vertex *vertex_buffer;
 };
 
-
-typedef RenderData *GameUpdateCall(GameInput *input);
-typedef void GameInitializeCall();
+typedef RenderData *GameUpdateCall(GameInput *input, u8 *memory);
+typedef void GameInitializeCall(u8 *memory, u64 memory_size);

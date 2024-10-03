@@ -132,7 +132,7 @@ i32 main()
 {
     scratch = {};
     scratch.capacity = MegaByte(1);
-    scratch.memory = (u8*) malloc(sizeof(scratch.capacity));
+    scratch.memory = (u8*) malloc(scratch.capacity);
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -151,7 +151,6 @@ i32 main()
     }
 
     window = glfwCreateWindow(window_width, window_height, "Game", monitor, NULL);
-
     assert(window);
 
     glfwSetFramebufferSizeCallback(window, ResizeCallback);
@@ -179,7 +178,7 @@ i32 main()
     GameInitializeCall *game_initialize = (GameInitializeCall *) GetProcAddress(game_code, "GameInitialize");
     assert(game_update && game_initialize);
 
-    game_initialize();
+    game_initialize(game_memory, game_memory_size);
 
     f32 prev_time = glfwGetTime();
     u32 prev_key_states = 0;
@@ -208,7 +207,7 @@ i32 main()
         }
         prev_key_states = input.key_states;
 
-        RenderData *render_data = game_update(&input);
+        RenderData *render_data = game_update(&input, game_memory);
 
         DrawFrame(render_data, window_width, window_height);
 

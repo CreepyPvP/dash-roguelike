@@ -12,12 +12,12 @@
 // NOTE: Cpp context causes name mangling. sad :(
 extern "C"
 {
-    __declspec(dllexport) RenderData *GameUpdate(GameInput *input_data, void *memory);
-    __declspec(dllexport) void GameInitialize(void *memory, u64 memory_size);
+    __declspec(dllexport) RenderData * __stdcall GameUpdate(GameInput *input_data, u8 *memory);
+    __declspec(dllexport) void _stdcall GameInitialize(u8 *memory, u64 memory_size);
 }
 
-Player player;
-Level level;
+Player *player;
+Level *level;
 
 GameInput *input;
 GameState *state;
@@ -103,14 +103,14 @@ SensorResult ReadSensor(V2 position, Direction direction)
 
     while (true)
     {
-        if (grid_x < 0 || grid_x >= level.width || grid_y < 0 || grid_y >= level.height)
+        if (grid_x < 0 || grid_x >= level->width || grid_y < 0 || grid_y >= level->height)
         {
             result.hit = walk_pos;
             result.status = 2;
             break;
         }
 
-        if (level.tiles[grid_x + grid_y * level.width])
+        if (level->tiles[grid_x + grid_y * level->width])
         {
             result.hit = walk_pos;
             result.status = 1;
@@ -153,12 +153,12 @@ void LoadLevel(u32 stage)
     u8 *data = stbi_load(level_files[stage], &width, &height, &channel, STBI_rgb);
     assert(data);
 
-    level = {};
+    Level level = {};
     level.width = width;
     level.height = height;
     assert(width * height < sizeof(level.tiles));
 
-    player = {};
+    Player player = {};
 
     u8 *walk = data;
 
@@ -189,6 +189,9 @@ void LoadLevel(u32 stage)
     }
 
     stbi_image_free(data);
+
+    state->player = player;
+    state->level = level;
 }
 
 void GameInitialize(u8 *memory, u64 memory_size)
@@ -204,10 +207,13 @@ void GameInitialize(u8 *memory, u64 memory_size)
     LoadLevel(0);
 }
 
-RenderData *GameUpdate(GameInput *input_data, void *memory)
+RenderData *GameUpdate(GameInput *input_data, u8 *memory)
 {
     input = input_data;
     state = (GameState *) memory;
+
+    player = &state->player;
+    level = &state->level;
 
     vertex_count = {};
     level_buffer = {};
@@ -219,55 +225,48 @@ RenderData *GameUpdate(GameInput *input_data, void *memory)
         LoadLevel(0);
     }
 
-    if (!player.flags & PLAYER_MOVING)
+    if (!player->flags & PLAYER_MOVING)
     {
         if (KeyJustDown(Key_W))
         {
-            player.flags |= PLAYER_MOVING;
-            player.direction = Direction_Up;
+            player->flags |= PLAYER_MOVING;
+            player->direction = Direction_Up;
         }
         else if (KeyJustDown(Key_S))
         {
-            player.flags |= PLAYER_MOVING;
-            player.direction = Direction_Down;
+            player->flags |= PLAYER_MOVING;
+            player->direction = Direction_Down;
         }
         else if (KeyJustDown(Key_A))
         {
-            player.flags |= PLAYER_MOVING;
-            player.direction = Direction_Left;
+            player->flags |= PLAYER_MOVING;
+            player->direction = Direction_Left;
         }
         else if (KeyJustDown(Key_D))
         {
-            player.flags |= PLAYER_MOVING;
-            player.direction = Direction_Right;
+            player->flags |= PLAYER_MOVING;
+            player->direction = Direction_Right;
         }
     }
 
-    // static Direction direction;
-    // if (KeyJustDown(Key_C))
-    // {
-    //     direction = (Direction) ((direction + 1) % 4);
-    // }
-    // ReadSensor(player.position + v2(0.5), direction);
-
-    if (player.flags & PLAYER_MOVING)
+    if (player->flags & PLAYER_MOVING)
     {
-        SensorResult raycast = ReadSensor(player.position + player_sensor_offset[player.direction], player.direction);
+        SensorResult raycast = ReadSensor(player->position + player_sensor_offset[player->direction], player->direction);
 
         f32 move_dist = input->delta * 20;
         if (move_dist >= raycast.distance)
         {
             move_dist = raycast.distance;
-            player.flags &= ~PLAYER_MOVING;
+            player->flags &= ~PLAYER_MOVING;
         }
 
-        player.position += direction_to_vec[player.direction] * move_dist;
+        player->position += direction_to_vec[player->direction] * move_dist;
     }
 
-    for (u32 i = 0; i < level.enemy_count; ++i)
+    for (u32 i = 0; i < level->enemy_count; ++i)
     {
-        Enemy *enemy = &level.enemies[i];
-        if (AABBCollision(player.position, player.position + v2(1), enemy->position, enemy->position + v2(1)))
+        Enemy *enemy = &level->enemies[i];
+        if (AABBCollision(player->position, player->position + v2(1), enemy->position, enemy->position + v2(1)))
         {
             enemy->flags |= ENEMY_DEAD;
         }

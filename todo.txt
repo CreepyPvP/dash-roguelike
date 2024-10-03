@@ -1,0 +1,6 @@
+* move all state to GameState       (done)
+* write to render data
+* actually render it
+* reload game code
+
+Read dll export table with `Dumpbin game.dll /EXPORTS`
