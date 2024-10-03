@@ -287,7 +287,7 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
             {
                 assert(vertex_count + 4 <= lengthof(vertex_buffer));
 
-                V3 color = v3(0.6);
+                V3 color = v3(1, 0, 0);
 
                 Vertex *p0 = &vertex_buffer[vertex_count];
                 p0->position = v2(x * 32, y * 32);

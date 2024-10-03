@@ -4,6 +4,7 @@ project(engine)
 
 set(ROOT_DIR ${PROJECT_SOURCE_DIR})
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Z7")
 
 # add_definitions( -DSUPPORT_FILEFORMAT_PNG )
 # add_subdirectory(${RAYLIB_DIR})

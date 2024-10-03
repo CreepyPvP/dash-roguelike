@@ -13,6 +13,14 @@ GLFWwindow *window;
 i32 window_width = 920;
 i32 window_height = 680;
 
+struct GameCode
+{
+    bool valid;
+    HMODULE game_code_dll;
+    GameUpdateCall *GameUpdate;
+    GameInitializeCall *GameInitialize;
+};
+
 // Keys ...
 // 
 
@@ -128,6 +136,44 @@ void APIENTRY DebugOutput(GLenum source,
     printf("OPENGL (%s, Source: %s, Type: %s): %s", severity_str, source_str, type_str, message);
 }
 
+GameCode LoadGameCode()
+{
+    GameCode result = {};
+    bool copy = CopyFile("build/debug/game.dll", "game_temp.dll", false);
+
+    if (!copy)
+    {
+        i32 error = GetLastError();
+        if (error == ERROR_FILE_NOT_FOUND)
+        {
+            printf("Failed to copy game code: File not found\n");
+        }
+        return result;
+    }
+
+    result.game_code_dll = LoadLibrary("game_temp.dll");
+    if (result.game_code_dll)
+    {
+        result.GameUpdate = (GameUpdateCall *) GetProcAddress(result.game_code_dll, "GameUpdate");
+        result.GameInitialize = (GameInitializeCall *) GetProcAddress(result.game_code_dll, "GameInitialize");
+        result.valid = result.GameUpdate && result.GameInitialize;
+    }
+
+    // TODO: Set fallback procs here
+
+    return result;
+}
+
+void UnloadGameCode(GameCode *game_code)
+{
+    if (game_code->game_code_dll)
+    {
+        FreeLibrary(game_code->game_code_dll);
+    }
+    game_code->valid = false;
+    // TODO: Set fallback procs here
+}
+
 i32 main()
 {
     scratch = {};
@@ -172,13 +218,10 @@ i32 main()
     u64 game_memory_size = MegaByte(10);
     u8 *game_memory = (u8 *) malloc(game_memory_size);
 
-    HMODULE game_code = LoadLibrary("game.dll");
-    assert(game_code);
-    GameUpdateCall *game_update = (GameUpdateCall *) GetProcAddress(game_code, "GameUpdate");
-    GameInitializeCall *game_initialize = (GameInitializeCall *) GetProcAddress(game_code, "GameInitialize");
-    assert(game_update && game_initialize);
+    u32 load_counter = 128;
+    GameCode game_code = LoadGameCode();
 
-    game_initialize(game_memory, game_memory_size);
+    game_code.GameInitialize(game_memory, game_memory_size);
 
     f32 prev_time = glfwGetTime();
     u32 prev_key_states = 0;
@@ -188,6 +231,13 @@ i32 main()
         f32 time = glfwGetTime();
         f32 delta = time - prev_time;
         prev_time = time;
+
+        if (--load_counter == 0)
+        {
+            UnloadGameCode(&game_code);
+            game_code = LoadGameCode();
+            load_counter = 128;
+        }
 
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         {
@@ -207,7 +257,7 @@ i32 main()
         }
         prev_key_states = input.key_states;
 
-        RenderData *render_data = game_update(&input, game_memory);
+        RenderData *render_data = game_code.GameUpdate(&input, game_memory);
 
         DrawFrame(render_data, window_width, window_height);
 

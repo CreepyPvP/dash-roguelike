@@ -118,6 +118,11 @@ void InitializeRenderer()
     glBindVertexArray(0);
 }
 
+inline void MultiDrawCommand(MultiDraw *draw)
+{
+    glMultiDrawArrays(GL_TRIANGLE_STRIP, draw->offsets, draw->counts, draw->primitive_count);
+}
+
 void DrawFrame(RenderData *render_data, i32 window_width, i32 window_height)
 {
     f32 tilesize = 32;
@@ -184,7 +189,9 @@ void DrawFrame(RenderData *render_data, i32 window_width, i32 window_height)
     glBindVertexArray(vertex_vao);
     glUseProgram(default_shader.id);
 
-    glMultiDrawArrays(GL_TRIANGLE_STRIP, render_data->level.offsets, render_data->level.counts, render_data->level.primitive_count);
+    MultiDrawCommand(&render_data->level);
+    MultiDrawCommand(&render_data->enemies);
+    MultiDrawCommand(&render_data->debug);
 }
 
 // Drawing
