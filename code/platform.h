@@ -43,7 +43,7 @@ inline bool KeyDown(Key key)
 
 inline bool KeyJustDown(Key key)
 {
-    return input->key_states && (1 << key) && !(input->prev_key_states && (1 << key));
+    return (input->key_states & (1 << key)) && !(input->prev_key_states && (1 << key));
 }
 
 // Renderer api...
@@ -62,11 +62,18 @@ struct MultiDraw
     i32 *counts;
 };
 
+struct SingleDraw
+{
+    i32 offset;
+    i32 count;
+};
+
 struct RenderData
 {
     MultiDraw debug;
     MultiDraw level;
     MultiDraw enemies;
+    SingleDraw player;
 
     u32 vertex_count;
     Vertex *vertex_buffer;

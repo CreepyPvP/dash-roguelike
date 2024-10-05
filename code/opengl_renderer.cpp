@@ -123,22 +123,14 @@ inline void MultiDrawCommand(MultiDraw *draw)
     glMultiDrawArrays(GL_TRIANGLE_STRIP, draw->offsets, draw->counts, draw->primitive_count);
 }
 
+inline void SingleDrawCommand(SingleDraw *draw)
+{
+    glDrawArrays(GL_TRIANGLE_STRIP, draw->offset, draw->count);
+}
+
 void DrawFrame(RenderData *render_data, i32 window_width, i32 window_height)
 {
     f32 tilesize = 32;
-
-    // Draw map
-
-    // for (u32 x = 0; x < level.width; ++x)
-    // {
-    //     for (u32 y = 0; y < level.height; ++y)
-    //     {
-    //         if (level.tiles[x + y * level.width])
-    //         {
-    //             DrawRect(v2(x * tilesize , y * tilesize), v2(tilesize), v3(0.4, 0.4, 0.4));
-    //         }
-    //     }
-    // }
 
     // Draw enemies
     // for (u32 i = 0; i < level.enemy_count; ++i)
@@ -152,9 +144,6 @@ void DrawFrame(RenderData *render_data, i32 window_width, i32 window_height)
     //     
     //     DrawRect(v2(enemy->position.x * tilesize, enemy->position.y * tilesize), v2(tilesize), v3(0.9, 0.2, 0.2));
     // }
-
-    // Draw player
-    // DrawRect(v2(player.position.x * tilesize, player.position.y * tilesize), v2(tilesize), v3(0.2, 0.2, 0.9));
 
     // Draw debug rays
     // for (u32 i = 0; i < debug_ray_count; ++i)
@@ -191,6 +180,7 @@ void DrawFrame(RenderData *render_data, i32 window_width, i32 window_height)
 
     MultiDrawCommand(&render_data->level);
     MultiDrawCommand(&render_data->enemies);
+    SingleDrawCommand(&render_data->player);
     MultiDrawCommand(&render_data->debug);
 }
 

@@ -50,6 +50,63 @@ inline MultiDraw BufferToDraw(MultiDrawBuffer *buffer)
     return draw;
 }
 
+void DrawQuad(MultiDrawBuffer *buffer, V2 topleft, V2 size, V3 color)
+{
+    assert(vertex_count + 4 <= lengthof(vertex_buffer));
+    assert(buffer->primitive_count < lengthof(buffer->offsets));
+
+    Vertex *p0 = &vertex_buffer[vertex_count + 0];
+    p0->position = v2(topleft.x, topleft.y);
+    p0->color = color;
+
+    Vertex *p1 = &vertex_buffer[vertex_count + 1];
+    p1->position = v2(topleft.x + size.x, topleft.y);
+    p1->color = color;
+
+    Vertex *p2 = &vertex_buffer[vertex_count + 2];
+    p2->position = v2(topleft.x, topleft.y + size.y);
+    p2->color = color;
+
+    Vertex *p3 = &vertex_buffer[vertex_count + 3];
+    p3->position = v2(topleft.x + size.x, topleft.y + size.y);
+    p3->color = color;
+
+    u32 primitive = buffer->primitive_count;
+    buffer->offsets[primitive] = vertex_count;
+    buffer->counts[primitive] = 4;
+
+    vertex_count += 4;
+    buffer->primitive_count++;
+}
+
+SingleDraw DrawQuad(V2 topleft, V2 size, V3 color)
+{
+    assert(vertex_count + 4 <= lengthof(vertex_buffer));
+
+    Vertex *p0 = &vertex_buffer[vertex_count + 0];
+    p0->position = v2(topleft.x, topleft.y);
+    p0->color = color;
+
+    Vertex *p1 = &vertex_buffer[vertex_count + 1];
+    p1->position = v2(topleft.x + size.x, topleft.y);
+    p1->color = color;
+
+    Vertex *p2 = &vertex_buffer[vertex_count + 2];
+    p2->position = v2(topleft.x, topleft.y + size.y);
+    p2->color = color;
+
+    Vertex *p3 = &vertex_buffer[vertex_count + 3];
+    p3->position = v2(topleft.x + size.x, topleft.y + size.y);
+    p3->color = color;
+
+    SingleDraw draw = {};
+    draw.offset = vertex_count;
+    draw.count = 4;
+
+    vertex_count += 4;
+    return draw;
+}
+
 // Level stuff...
 
 V2 direction_to_vec[4] = {
@@ -232,12 +289,12 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
         if (KeyJustDown(Key_W))
         {
             player->flags |= PLAYER_MOVING;
-            player->direction = Direction_Up;
+            player->direction = Direction_Down;
         }
         else if (KeyJustDown(Key_S))
         {
             player->flags |= PLAYER_MOVING;
-            player->direction = Direction_Down;
+            player->direction = Direction_Up;
         }
         else if (KeyJustDown(Key_A))
         {
@@ -282,46 +339,33 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
     // \
     // 0,540
 
+    RenderData *render = &state->render_data;
+
     for (u32 y = 0; y < level->height; ++y)
     {
         for (u32 x = 0; x < level->width; ++x)
         {
             if (level->tiles[x + y * level->width])
             {
-                assert(vertex_count + 4 <= lengthof(vertex_buffer));
-
-                V3 color = v3(1, 0, 0);
-
-                Vertex *p0 = &vertex_buffer[vertex_count];
-                p0->position = v2(x * 32, y * 32);
-                p0->color = color;
-
-                Vertex *p1 = &vertex_buffer[vertex_count + 1];
-                p1->position = v2(x * 32 + 32, y * 32);
-                p1->color = color;
-
-                Vertex *p2 = &vertex_buffer[vertex_count + 2];
-                p2->position = v2(x * 32, y * 32 + 32);
-                p2->color = color;
-
-                Vertex *p3 = &vertex_buffer[vertex_count + 3];
-                p3->position = v2(x * 32 + 32, y * 32 + 32);
-                p3->color = color;
-
-                assert(level_buffer.primitive_count < lengthof(level_buffer.offsets));
-                u32 primitive = level_buffer.primitive_count;
-                level_buffer.offsets[primitive] = vertex_count;
-                level_buffer.counts[primitive] = 4;
-
-                vertex_count += 4;
-                level_buffer.primitive_count++;
-
-                // DrawQuad(x * 32, y * 32, 32, 32, v3(0.6));
+                DrawQuad(&level_buffer, v2(x * 32, y * 32), v2(32), v3(0, 0, 1));
             }
         }
     }
 
-    RenderData *render = &state->render_data;
+    for (u32 i = 0; i < level->enemy_count; ++i)
+    {
+        Enemy *enemy = &level->enemies[i];
+
+        if (enemy->flags & ENEMY_DEAD)
+        {
+            continue;
+        }
+
+        DrawQuad(&enemy_buffer, enemy->position * 32, v2(32), v3(1, 0, 0));
+    }
+
+    render->player = DrawQuad(player->position * 32, v2(32), v3(0, 1, 0));
+
     render->vertex_count = vertex_count;
     render->vertex_buffer = vertex_buffer;
     render->debug = BufferToDraw(&debug_buffer);

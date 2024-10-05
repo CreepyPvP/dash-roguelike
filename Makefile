@@ -10,7 +10,7 @@ all: platform.exe game.dll
 
 platform.exe: build/glad.lib build/glfw.lib build/build.txt
 	@clang code/win32_platform.cpp $(COMPARGS)  -I code -I external/glad/include -I external/GLFW/include -o $(PLATFORM_NAME) build/glfw.lib build/glad.lib -luser32 -lgdi32 -lshell32 -lopengl32
-	-@mv $(PLATFORM_NAME) platform.exe
+	-mv $(PLATFORM_NAME) platform.exe
 
 game.dll: build/build.txt
 	@clang code/game.cpp $(COMPARGS) -I code -shared -o $(GAME_DLL_NAME)

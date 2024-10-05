@@ -1,1 +1,1 @@
-vim.keymap.set("n", "<A-c>", "<cmd>make<CR>");
+vim.keymap.set("n", "<A-c>", "<cmd>make!<CR>");
