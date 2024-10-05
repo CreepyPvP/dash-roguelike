@@ -6,6 +6,9 @@
 #include "game_math.h"
 #include "platform.h"
 
+#include "memory.cpp"
+#include "game_math.cpp"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -140,7 +143,7 @@ SensorResult ReadSensor(V2 position, Direction direction)
 
 // level stuff...
 
-char *level_files[] = {
+const char *level_files[] = {
     "assets/level_0.png",
 };
 
@@ -224,7 +227,7 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
         LoadLevel(0);
     }
 
-    if (!player->flags & PLAYER_MOVING)
+    if (!(player->flags & PLAYER_MOVING))
     {
         if (KeyJustDown(Key_W))
         {

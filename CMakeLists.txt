@@ -4,7 +4,7 @@ project(engine)
 
 set(ROOT_DIR ${PROJECT_SOURCE_DIR})
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Z7")
+set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>")
 
 # add_definitions( -DSUPPORT_FILEFORMAT_PNG )
 # add_subdirectory(${RAYLIB_DIR})
@@ -46,8 +46,10 @@ target_include_directories(platform
 
 target_link_libraries(platform glfw opengl32 glad user32)
 
-target_compile_definitions(platform PUBLIC PLATFORM)
-
+target_link_options(platform PUBLIC 
+    /INCREMENTAL:NO
+    /DEBUG:FULL
+)
 # game
 add_library(game SHARED 
     code/defines.h 
@@ -64,4 +66,10 @@ add_library(game SHARED
 target_include_directories(game 
     PUBLIC external
     PUBLIC code
+)
+
+target_link_options(game PUBLIC 
+    /INCREMENTAL:NO
+    /DEBUG:FULL
+    # /PDB:"$(OutDir)$(TargetName)-$([System.DateTime]::Now.ToString("HH_mm_ss_fff")).pdb"
 )

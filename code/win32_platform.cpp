@@ -7,7 +7,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "renderer_backend.h"
+#include "memory.cpp"
+#include "game_math.cpp"
+#include "opengl_renderer.cpp"
 
 GLFWwindow *window;
 i32 window_width = 920;
@@ -139,7 +141,7 @@ void APIENTRY DebugOutput(GLenum source,
 GameCode LoadGameCode()
 {
     GameCode result = {};
-    bool copy = CopyFile("build/debug/game.dll", "game_temp.dll", false);
+    bool copy = CopyFile("game.dll", "game_temp.dll", false);
 
     if (!copy)
     {
