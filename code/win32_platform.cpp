@@ -19,6 +19,7 @@ struct GameCode
 {
     bool valid;
     HMODULE game_code_dll;
+    FILETIME last_dll_modification;
     GameUpdateCall *GameUpdate;
     GameInitializeCall *GameInitialize;
 };
@@ -138,6 +139,13 @@ void APIENTRY DebugOutput(GLenum source,
     printf("OPENGL (%s, Source: %s, Type: %s): %s", severity_str, source_str, type_str, message);
 }
 
+FILETIME GetDLLWriteTime()
+{
+    WIN32_FIND_DATA file_data = {};
+    FindFirstFile("game.dll", &file_data);
+    return file_data.ftLastWriteTime;
+}
+
 GameCode LoadGameCode()
 {
     GameCode result = {};
@@ -156,6 +164,7 @@ GameCode LoadGameCode()
     result.game_code_dll = LoadLibrary("game_temp.dll");
     if (result.game_code_dll)
     {
+        result.last_dll_modification = GetDLLWriteTime();
         result.GameUpdate = (GameUpdateCall *) GetProcAddress(result.game_code_dll, "GameUpdate");
         result.GameInitialize = (GameInitializeCall *) GetProcAddress(result.game_code_dll, "GameInitialize");
         result.valid = result.GameUpdate && result.GameInitialize;
@@ -220,7 +229,6 @@ i32 main()
     u64 game_memory_size = MegaByte(10);
     u8 *game_memory = (u8 *) malloc(game_memory_size);
 
-    u32 load_counter = 128;
     GameCode game_code = LoadGameCode();
 
     game_code.GameInitialize(game_memory, game_memory_size);
@@ -234,11 +242,11 @@ i32 main()
         f32 delta = time - prev_time;
         prev_time = time;
 
-        if (--load_counter == 0)
+        FILETIME dll_write_time = GetDLLWriteTime();
+        if (CompareFileTime(&game_code.last_dll_modification, &dll_write_time) == -1)
         {
             UnloadGameCode(&game_code);
             game_code = LoadGameCode();
-            load_counter = 128;
         }
 
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)

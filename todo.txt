@@ -1,11 +1,4 @@
-* move all state to GameState       (done)
-* write to render data
-* actually render it
-* reload game code
-
-1920 x 1080 full hd
-960 x 540
-=> 32 x 32 tiles
-=> 30 x 16 grid
+Only reload game if file changed. rip performance
+Clear build folder once in a while. rip disk space
 
 Read dll export table with `Dumpbin game.dll /EXPORTS`
