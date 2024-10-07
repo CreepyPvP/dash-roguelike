@@ -110,16 +110,30 @@ SingleDraw DrawQuad(V2 topleft, V2 size, V3 color)
 // Level stuff...
 
 V2 direction_to_vec[4] = {
-    v2(0, 1),
-    v2(-1, 0),
     v2(0, -1),
+    v2(-1, 0),
+    v2(0, 1),
     v2(1, 0),
 };
 
+V2i direction_to_ivec[4] = {
+    v2i(0, -1),
+    v2i(-1, 0),
+    v2i(0, 1),
+    v2i(1, 0),
+};
+
+Direction direction_to_opposite[4] = {
+    Direction_Down,
+    Direction_Right,
+    Direction_Up,
+    Direction_Left,
+};
+
 V2 player_sensor_offset[4] = {
-    v2(0.5, 1),
-    v2(0, 0.5),
     v2(0.5, 0),
+    v2(0, 0.5),
+    v2(0.5, 1),
     v2(1, 0.5),
 };
 
@@ -200,25 +214,25 @@ SensorResult ReadSensor(V2 position, Direction direction)
 
 // level stuff...
 
-const char *level_files[] = {
+const char *room_files[] = {
     "assets/level_0.png",
 };
 
-void LoadLevel(u32 stage)
+void LoadRoom(u32 stage)
 {
     i32 width;
-    i32 height; 
+    i32 height;
     i32 channel = 3;
 
-    u8 *data = stbi_load(level_files[stage], &width, &height, &channel, STBI_rgb);
+    u8 *data = stbi_load(room_files[stage], &width, &height, &channel, STBI_rgb);
     assert(data);
 
-    Level level = {};
-    level.width = width;
-    level.height = height;
-    assert(width * height < sizeof(level.tiles));
+    assert(state->room_count < lengthof(state->rooms));
+    Room *room = &state->rooms[state->room_count++];
+    assert(width * height < sizeof(room->tiles));
 
-    Player player = {};
+    room->width = width;
+    room->height = height;
 
     u8 *walk = data;
 
@@ -228,18 +242,19 @@ void LoadLevel(u32 stage)
         {
             if (walk[0] == 0 && walk[1] == 0 && walk[2] == 0)
             {
-                level.tiles[x + y * width] = 1;
+                room->tiles[x + y * room->width] = 1;
             }
 
             if (walk[0] == 0 && walk[1] == 0 && walk[2] == 255)
             {
-                player.position = v2(x, y);
+                room->flags |= ROOM_HAS_PLAYER_SPAWN;
+                room->player_spawn = v2i(x, y);
             }
 
             if (walk[0] == 255 && walk[1] == 0 && walk[2] == 0)
             {
-                assert(level.enemy_count < lengthof(level.enemies));
-                Enemy *enemy = &level.enemies[level.enemy_count++];
+                assert(room->enemy_count < lengthof(room->enemies));
+                Enemy *enemy = &room->enemies[room->enemy_count++];
                 enemy->position = v2(x, y);
             }
 
@@ -248,9 +263,78 @@ void LoadLevel(u32 stage)
     }
 
     stbi_image_free(data);
+}
 
-    state->player = player;
-    state->level = level;
+void LoadAllRooms()
+{
+    for (u32 i = 0; i < lengthof(room_files); ++i)
+    {
+        LoadRoom(i);
+    }
+}
+
+Room *FindRoom(bool contains_spawn, Direction entrance)
+{
+    for (u32 i = 0; i < state->room_count; ++i)
+    {
+        Room *room = &state->rooms[i];
+
+        if (room->flags & ROOM_HAS_PLAYER_SPAWN)
+        {
+            if (contains_spawn)
+            {
+                return room;
+            }
+
+            continue;
+        }
+
+        if (room->direction_entrance == entrance)
+        {
+            return room;
+        }
+    }
+
+    return NULL;
+}
+
+void GenerateLevel()
+{
+    state->level = {};
+
+    Room *start_room = FindRoom(true, Direction_Up);
+    if (!start_room)
+    {
+        // We are sad
+        assert(0);
+    }
+
+    V2i offsets[32] = {};
+    Room *rooms[32] = {};
+
+    rooms[0] = start_room;
+
+    V2i parent_offset = v2i(0, 0);
+    Room *parent = start_room;
+
+    for (u32 i = 1; i < 32; ++i)
+    {
+        // offset parent
+        // offset exit
+        // unit direction
+        // - offset entrance
+
+        Room *self = FindRoom(false, direction_to_opposite[parent->direction_exit]);
+        assert(self);
+
+        V2i offset = parent_offset + parent->offset_exit + direction_to_ivec[parent->direction_exit] - self->offset_entrance;
+        
+        offsets[i] = offset;
+        rooms[i] = self;
+
+        parent = self;
+        parent_offset = offset;
+    }
 }
 
 void GameInitialize(u8 *memory, u64 memory_size)
@@ -263,7 +347,8 @@ void GameInitialize(u8 *memory, u64 memory_size)
     arena->capacity = memory_size;
     arena->offset = sizeof(GameState);
 
-    LoadLevel(0);
+    LoadAllRooms();
+    GenerateLevel();
 }
 
 RenderData *GameUpdate(GameInput *input_data, u8 *memory)
@@ -282,7 +367,10 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
 
     if (KeyJustDown(Key_R))
     {
-        LoadLevel(0);
+        // Reload all resources here
+        state->room_count = 0;
+        LoadAllRooms();
+        GenerateLevel();
     }
 
     if (!(player->flags & PLAYER_MOVING))
@@ -290,12 +378,12 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
         if (KeyDown(Key_W))
         {
             player->flags |= PLAYER_MOVING;
-            player->direction = Direction_Down;
+            player->direction = Direction_Up;
         }
         else if (KeyDown(Key_S))
         {
             player->flags |= PLAYER_MOVING;
-            player->direction = Direction_Up;
+            player->direction = Direction_Down;
         }
         else if (KeyDown(Key_A))
         {
@@ -336,6 +424,7 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
     // 0,0 ------------> 960,0
     // |
     // | each tile is 32 x 32
+    // | 30 x 16.8 tiles
     // | 
     // |
     // 0,540

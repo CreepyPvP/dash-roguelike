@@ -10,6 +10,9 @@
 
 #define ENEMY_DEAD (1 << 0)
 
+#define ROOM_HAS_PLAYER_SPAWN (1 << 0)
+
+// Direction in screen space! 
 enum Direction
 {
     Direction_Up,
@@ -31,6 +34,25 @@ struct Enemy
     V2 position;
 };
 
+struct Room
+{
+    u32 flags;
+
+    u8 tiles[256];
+    i32 width;
+    i32 height;
+
+    u32 enemy_count;
+    Enemy enemies[20];
+
+    V2i offset_entrance;
+    V2i offset_exit;
+    Direction direction_exit;
+    Direction direction_entrance;
+
+    V2i player_spawn;
+};
+
 struct Level
 {
     i32 width;
@@ -48,6 +70,10 @@ struct GameState
 
     Player player;
     Level level;
+
+    // Assets...
+    u32 room_count;
+    Room rooms[32];
 };
 
 extern GameInput *input;

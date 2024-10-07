@@ -24,6 +24,17 @@ inline f32 Round(f32 a)
     return Floor(a + 0.5);
 }
 
+struct V2i
+{
+    i32 x;
+    i32 y;
+};
+
+inline V2 v2i(i32 x, i32 y)
+{
+    return {x, y};
+}
+
 struct V2
 {
     f32 x;
