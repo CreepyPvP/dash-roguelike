@@ -12,8 +12,8 @@
 #include "opengl_renderer.cpp"
 
 GLFWwindow *window;
-i32 window_width = 920;
-i32 window_height = 680;
+i32 window_width = 960;
+i32 window_height = 540;
 
 struct GameCode
 {

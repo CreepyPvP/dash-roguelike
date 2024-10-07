@@ -161,7 +161,7 @@ void DrawFrame(RenderData *render_data, i32 window_width, i32 window_height)
 
     f32 aspect = (f32) window_width / (f32) window_height;
     f32 viewport_height = 540;
-    f32 viewport_width = 960;
+    f32 viewport_width = aspect * viewport_height;
     uniforms.projection = Ortho(0, viewport_width, viewport_height, 0, 0.1, 100);
     uniforms.view = LookAt(v3(0, 0, 50), v3(0, 0, 0), v3(0, 1, 0));
 

@@ -286,22 +286,22 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
 
     if (!(player->flags & PLAYER_MOVING))
     {
-        if (KeyJustDown(Key_W))
+        if (KeyDown(Key_W))
         {
             player->flags |= PLAYER_MOVING;
             player->direction = Direction_Down;
         }
-        else if (KeyJustDown(Key_S))
+        else if (KeyDown(Key_S))
         {
             player->flags |= PLAYER_MOVING;
             player->direction = Direction_Up;
         }
-        else if (KeyJustDown(Key_A))
+        else if (KeyDown(Key_A))
         {
             player->flags |= PLAYER_MOVING;
             player->direction = Direction_Left;
         }
-        else if (KeyJustDown(Key_D))
+        else if (KeyDown(Key_D))
         {
             player->flags |= PLAYER_MOVING;
             player->direction = Direction_Right;
@@ -312,7 +312,7 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
     {
         SensorResult raycast = ReadSensor(player->position + player_sensor_offset[player->direction], player->direction);
 
-        f32 move_dist = input->delta * 20;
+        f32 move_dist = input->delta * 50;
         if (move_dist >= raycast.distance)
         {
             move_dist = raycast.distance;
