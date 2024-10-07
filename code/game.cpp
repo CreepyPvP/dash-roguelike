@@ -270,6 +270,7 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
 {
     input = input_data;
     state = (GameState *) memory;
+    printf("%f\n", input->delta);
 
     player = &state->player;
     level = &state->level;
@@ -333,10 +334,10 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
 
     // We render at 960 x 540
     // 0,0 ------------> 960,0
-    // \
-    // \ each tile is 32 x 32
-    // \ 
-    // \
+    // |
+    // | each tile is 32 x 32
+    // | 
+    // |
     // 0,540
 
     RenderData *render = &state->render_data;
