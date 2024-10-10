@@ -22,7 +22,10 @@ struct Player
 {
     u32 flags;
     Direction direction;
+
     V2 position;
+    i32 chunk_x;
+    i32 chunk_y;
 };
 
 struct Enemy
@@ -31,23 +34,31 @@ struct Enemy
     V2 position;
 };
 
-struct Level
+struct Chunk
 {
-    i32 width;
-    i32 height;
-    u8 tiles[256];
+    u32 width;
+    u32 height;
+    u8 *tiles;
 
     u32 enemy_count;
     Enemy enemies[64];
 };
 
+struct World
+{
+    i32 width;
+    i32 height;
+    Chunk *chunks;
+};
+
 struct GameState
 {
     Arena memory;
+    Arena world_memory;
     RenderData render_data;
 
     Player player;
-    Level level;
+    World *world;
 };
 
 extern GameInput *input;

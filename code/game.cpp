@@ -20,7 +20,6 @@ extern "C"
 }
 
 Player *player;
-Level *level;
 
 GameInput *input;
 GameState *state;
@@ -107,7 +106,7 @@ SingleDraw DrawQuad(V2 topleft, V2 size, V3 color)
     return draw;
 }
 
-// Level stuff...
+// World stuff...
 
 V2 direction_to_vec[4] = {
     v2(0, 1),
@@ -123,6 +122,12 @@ V2 player_sensor_offset[4] = {
     v2(1, 0.5),
 };
 
+inline Chunk *CurrentChunk()
+{
+    World *world = state->world;
+    return world->chunks + (player->chunk_x + world->width * player->chunk_y);
+}
+
 struct SensorResult
 {
     u32 status;
@@ -133,6 +138,8 @@ struct SensorResult
 SensorResult ReadSensor(V2 position, Direction direction)
 {
     SensorResult result = {};
+
+    Chunk *chunk = CurrentChunk();
 
     bool horizontal = direction & 1;
     V2 dir = direction_to_vec[direction];
@@ -163,14 +170,14 @@ SensorResult ReadSensor(V2 position, Direction direction)
 
     while (true)
     {
-        if (grid_x < 0 || grid_x >= level->width || grid_y < 0 || grid_y >= level->height)
+        if (grid_x < 0 || grid_x >= 16 || grid_y < 0 || grid_y >= 16)
         {
             result.hit = walk_pos;
             result.status = 2;
             break;
         }
 
-        if (level->tiles[grid_x + grid_y * level->width])
+        if (chunk->tiles[grid_x + grid_y * 16])
         {
             result.hit = walk_pos;
             result.status = 1;
@@ -204,53 +211,81 @@ const char *level_files[] = {
     "assets/level_0.png",
 };
 
-void LoadLevel(u32 stage)
+void LoadWorld()
 {
     i32 width;
     i32 height; 
     i32 channel = 3;
 
-    u8 *data = stbi_load(level_files[stage], &width, &height, &channel, STBI_rgb);
-    assert(data);
+    // u8 *data = stbi_load(level_files[stage], &width, &height, &channel, STBI_rgb);
+    // assert(data);
 
-    Level level = {};
-    level.width = width;
-    level.height = height;
-    assert(width * height < sizeof(level.tiles));
+    state->world_memory.offset = 0;
+
+    state->world = PushStruct(state->world_memory, World);
+    World *world = state->world;
+    world->width = 2;
+    world->height = 2;
+
+    world->chunks = PushArray(state->world_memory, Chunk, world->width * world->height);
+    world->chunks[0].width = 16;
+    world->chunks[0].height = 16;
+    world->chunks[0].tiles = PushBytes(state->world_memory, 256);
+
+    u8 tiles00[16][16] = {
+        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, },
+    };
+
+    memcpy(world->chunks[0].tiles, tiles00, 256);
 
     Player player = {};
 
-    u8 *walk = data;
+    // u8 *walk = data;
+    //
+    // for (i32 y = 0; y < height; ++y)
+    // {
+    //     for (i32 x = 0; x < width; ++x)
+    //     {
+    //         if (walk[0] == 0 && walk[1] == 0 && walk[2] == 0)
+    //         {
+    //             world.tiles[x + y * width] = 1;
+    //         }
+    //
+    //         if (walk[0] == 0 && walk[1] == 0 && walk[2] == 255)
+    //         {
+    //             player.position = v2(x, y);
+    //         }
+    //
+    //         if (walk[0] == 255 && walk[1] == 0 && walk[2] == 0)
+    //         {
+    //             assert(world.enemy_count < lengthof(world.enemies));
+    //             Enemy *enemy = world.enemies + world.enemy_count++;
+    //             enemy->position = v2(x, y);
+    //         }
+    //
+    //         walk += 3;
+    //     }
+    // }
 
-    for (i32 y = 0; y < height; ++y)
-    {
-        for (i32 x = 0; x < width; ++x)
-        {
-            if (walk[0] == 0 && walk[1] == 0 && walk[2] == 0)
-            {
-                level.tiles[x + y * width] = 1;
-            }
-
-            if (walk[0] == 0 && walk[1] == 0 && walk[2] == 255)
-            {
-                player.position = v2(x, y);
-            }
-
-            if (walk[0] == 255 && walk[1] == 0 && walk[2] == 0)
-            {
-                assert(level.enemy_count < lengthof(level.enemies));
-                Enemy *enemy = &level.enemies[level.enemy_count++];
-                enemy->position = v2(x, y);
-            }
-
-            walk += 3;
-        }
-    }
-
-    stbi_image_free(data);
+    // stbi_image_free(data);
 
     state->player = player;
-    state->level = level;
+    state->world = world;
 }
 
 void GameInitialize(u8 *memory, u64 memory_size)
@@ -263,7 +298,10 @@ void GameInitialize(u8 *memory, u64 memory_size)
     arena->capacity = memory_size;
     arena->offset = sizeof(GameState);
 
-    LoadLevel(0);
+    state->world_memory.capacity = KiloBytes(10);
+    state->world_memory.memory = PushArena(arena, state->world_memory.capacity);
+
+    LoadWorld();
 }
 
 RenderData *GameUpdate(GameInput *input_data, u8 *memory)
@@ -273,7 +311,7 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
     printf("%f\n", input->delta);
 
     player = &state->player;
-    level = &state->level;
+    world = &state->world;
 
     vertex_count = {};
     level_buffer = {};
@@ -282,7 +320,7 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
 
     if (KeyJustDown(Key_R))
     {
-        LoadLevel(0);
+        LoadWorld();
     }
 
     if (!(player->flags & PLAYER_MOVING))
@@ -323,9 +361,11 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
         player->position += direction_to_vec[player->direction] * move_dist;
     }
 
-    for (u32 i = 0; i < level->enemy_count; ++i)
+    Chunk *chunk = CurrentChunk();
+
+    for (u32 i = 0; i < chunk->enemy_count; ++i)
     {
-        Enemy *enemy = &level->enemies[i];
+        Enemy *enemy = chunk->enemies + i;
         if (AABBCollision(player->position, player->position + v2(1), enemy->position, enemy->position + v2(1)))
         {
             enemy->flags |= ENEMY_DEAD;
@@ -342,20 +382,20 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
 
     RenderData *render = &state->render_data;
 
-    for (u32 y = 0; y < level->height; ++y)
+    for (u32 y = 0; y < 16; ++y)
     {
-        for (u32 x = 0; x < level->width; ++x)
+        for (u32 x = 0; x < 16; ++x)
         {
-            if (level->tiles[x + y * level->width])
+            if (chunk->tiles[x + y * 16])
             {
                 DrawQuad(&level_buffer, v2(x * 32, y * 32), v2(32), v3(0, 0, 1));
             }
         }
     }
 
-    for (u32 i = 0; i < level->enemy_count; ++i)
+    for (u32 i = 0; i < chunk->enemy_count; ++i)
     {
-        Enemy *enemy = &level->enemies[i];
+        Enemy *enemy = chunk->enemies + i;
 
         if (enemy->flags & ENEMY_DEAD)
         {
