@@ -29,16 +29,17 @@ GameState *state;
 struct MultiDrawBuffer
 {
     i32 primitive_count;
-    i32 offsets[128];
-    i32 counts[128];
+    i32 offsets[512];
+    i32 counts[512];
 };
 
 u32 vertex_count;
-Vertex vertex_buffer[1024];
+Vertex vertex_buffer[4096];
 
 MultiDrawBuffer level_buffer;
 MultiDrawBuffer debug_buffer;
 MultiDrawBuffer enemy_buffer;
+MultiDrawBuffer player_buffer;
 
 inline MultiDraw BufferToDraw(MultiDrawBuffer *buffer)
 {
@@ -77,64 +78,6 @@ void DrawQuad(MultiDrawBuffer *buffer, V2 topleft, V2 size, V3 color)
     vertex_count += 4;
     buffer->primitive_count++;
 }
-
-SingleDraw DrawQuad(V2 topleft, V2 size, V3 color)
-{
-    assert(vertex_count + 4 <= lengthof(vertex_buffer));
-
-    Vertex *p0 = &vertex_buffer[vertex_count + 0];
-    p0->position = v2(topleft.x, topleft.y);
-    p0->color = color;
-
-    Vertex *p1 = &vertex_buffer[vertex_count + 1];
-    p1->position = v2(topleft.x + size.x, topleft.y);
-    p1->color = color;
-
-    Vertex *p2 = &vertex_buffer[vertex_count + 2];
-    p2->position = v2(topleft.x, topleft.y + size.y);
-    p2->color = color;
-
-    Vertex *p3 = &vertex_buffer[vertex_count + 3];
-    p3->position = v2(topleft.x + size.x, topleft.y + size.y);
-    p3->color = color;
-
-    SingleDraw draw = {};
-    draw.offset = vertex_count;
-    draw.count = 4;
-
-    vertex_count += 4;
-    return draw;
-}
-
-// World stuff...
-
-V2 direction_to_vec[4] = {
-    v2(0, -1),
-    v2(-1, 0),
-    v2(0, 1),
-    v2(1, 0),
-};
-
-V2i direction_to_ivec[4] = {
-    v2i(0, -1),
-    v2i(-1, 0),
-    v2i(0, 1),
-    v2i(1, 0),
-};
-
-Direction direction_to_opposite[4] = {
-    Direction_Down,
-    Direction_Right,
-    Direction_Up,
-    Direction_Left,
-};
-
-V2 player_sensor_offset[4] = {
-    v2(0.5, 0),
-    v2(0, 0.5),
-    v2(0.5, 1),
-    v2(1, 0.5),
-};
 
 inline Chunk *CurrentChunk()
 {
@@ -234,7 +177,8 @@ void GameInitialize(u8 *memory, u64 memory_size)
 
     LoadWorld();
 
-    state->player.position = v2(2, 2);
+    state->player.tile_x = 2;
+    state->player.tile_y = 2;
 }
 
 RenderData *GameUpdate(GameInput *input_data, u8 *memory)
@@ -249,15 +193,41 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
     level_buffer = {};
     debug_buffer = {};
     enemy_buffer = {};
+    player_buffer = {};
 
     if (KeyJustDown(Key_R))
     {
         LoadWorld();
         *player = {};
-        player->position = v2(2, 2);
+        player->tile_x = 2;
+        player->tile_y = 2;
     }
 
     Chunk *chunk = CurrentChunk();
+
+    V2 player_local = v2(player->tile_x + player->offset.x, player->tile_y + player->offset.y);
+
+    if (KeyDown(Key_W))
+    {
+        player_local.y -= input->delta * 5;
+    }
+    if (KeyDown(Key_S))
+    {
+        player_local.y += input->delta * 5;
+    }
+    if (KeyDown(Key_A))
+    {
+        player_local.x -= input->delta * 5;
+    }
+    if (KeyDown(Key_D))
+    {
+        player_local.x += input->delta * 5;
+    }
+
+    player->tile_x = Floor(player_local.x);
+    player->tile_y = Floor(player_local.y);
+    player->offset.x = player_local.x - player->tile_x;
+    player->offset.y = player_local.y - player->tile_y;
 
     // We render at 960 x 540
     // 0,0 ------------> 960,0
@@ -274,32 +244,30 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
     {
         for (u32 x = 0; x < 16; ++x)
         {
+            DrawQuad(&level_buffer, v2(x * 32, y * 32), v2(32), v3(0.2, 0.8, 0.2));
+        }
+    }
+
+    for (u32 y = 0; y < 16; ++y)
+    {
+        for (u32 x = 0; x < 16; ++x)
+        {
             if (chunk->tiles[x + y * 16])
             {
-                DrawQuad(&level_buffer, v2(x * 32, y * 32), v2(32), v3(0, 0, 1));
+                DrawQuad(&level_buffer, v2(x * 32, y * 32), v2(32), v3(0.1, 0.5, 0.1));
             }
         }
     }
 
-    for (u32 i = 0; i < chunk->enemy_count; ++i)
-    {
-        Enemy *enemy = chunk->enemies + i;
-
-        if (enemy->flags & ENEMY_DEAD)
-        {
-            continue;
-        }
-
-        DrawQuad(&enemy_buffer, enemy->position * 32, v2(32), v3(1, 0, 0));
-    }
-
-    render->player = DrawQuad(player->position * 32, v2(32), v3(0, 1, 0));
+    DrawQuad(&player_buffer, v2(player->tile_x, player->tile_y) * 32, v2(32), v3(0));
+    DrawQuad(&player_buffer, player_local * 32, v2(32), v3(1));
 
     render->vertex_count = vertex_count;
     render->vertex_buffer = vertex_buffer;
     render->debug = BufferToDraw(&debug_buffer);
     render->level = BufferToDraw(&level_buffer);
     render->enemies = BufferToDraw(&enemy_buffer);
+    render->player = BufferToDraw(&player_buffer);
 
     return render;
 }

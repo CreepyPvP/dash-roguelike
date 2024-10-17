@@ -73,7 +73,7 @@ struct RenderData
     MultiDraw debug;
     MultiDraw level;
     MultiDraw enemies;
-    SingleDraw player;
+    MultiDraw player;
 
     u32 vertex_count;
     Vertex *vertex_buffer;

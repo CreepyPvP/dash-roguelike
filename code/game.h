@@ -6,27 +6,15 @@
 
 #include <assert.h>
 
-#define PLAYER_MOVING (1 << 0)
-
-#define ENEMY_DEAD (1 << 0)
-
-#define ROOM_HAS_PLAYER_SPAWN (1 << 0)
-
-// Direction in screen space! 
-enum Direction
-{
-    Direction_Up,
-    Direction_Left,
-    Direction_Down,
-    Direction_Right,
-};
 
 struct Player
 {
     u32 flags;
-    Direction direction;
 
-    V2 position;
+    V2 offset;
+    i32 tile_x;
+    i32 tile_y;
+
     i32 chunk_x;
     i32 chunk_y;
 };

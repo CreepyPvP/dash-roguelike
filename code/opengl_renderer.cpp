@@ -180,7 +180,7 @@ void DrawFrame(RenderData *render_data, i32 window_width, i32 window_height)
 
     MultiDrawCommand(&render_data->level);
     MultiDrawCommand(&render_data->enemies);
-    SingleDrawCommand(&render_data->player);
+    MultiDrawCommand(&render_data->player);
     MultiDrawCommand(&render_data->debug);
 }
 

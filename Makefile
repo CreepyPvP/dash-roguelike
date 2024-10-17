@@ -1,6 +1,6 @@
 .PHONY: clean platform.exe game.dll all
 
-COMPARGS := -g -Wno-deprecated-declarations -Wno-backslash-newline-escape
+COMPARGS := -g -O0 -Wno-deprecated-declarations -Wno-backslash-newline-escape 
 
 DATE := $(shell date +"%H%M%S")
 GAME_DLL_NAME = build/game_$(DATE).dll
@@ -9,11 +9,11 @@ PLATFORM_NAME = build/platform_$(DATE).exe
 all: platform.exe game.dll
 
 platform.exe: build/glad.lib build/glfw.lib build/build.txt
-	@clang code/win32_platform.cpp $(COMPARGS)  -I code -I external/glad/include -I external/GLFW/include -o $(PLATFORM_NAME) build/glfw.lib build/glad.lib -luser32 -lgdi32 -lshell32 -lopengl32
+	@clang code/win32_platform.cpp $(COMPARGS) -I code -I external/glad/include -I external/GLFW/include -g -O0 -o $(PLATFORM_NAME) build/glfw.lib build/glad.lib -luser32 -lgdi32 -lshell32 -lopengl32
 	-mv $(PLATFORM_NAME) platform.exe
 
 game.dll: build/build.txt
-	@clang code/game.cpp $(COMPARGS) -I code -shared -o $(GAME_DLL_NAME)
+	@clang code/game.cpp $(COMPARGS) -I code -shared -o $(GAME_DLL_NAME) -O0 -g
 	@mv $(GAME_DLL_NAME) game.dll
 
 build/build.txt:
