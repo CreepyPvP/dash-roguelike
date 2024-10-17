@@ -20,7 +20,6 @@ extern "C"
 }
 
 Player *player;
-Level *level;
 
 GameInput *input;
 GameState *state;
@@ -107,7 +106,7 @@ SingleDraw DrawQuad(V2 topleft, V2 size, V3 color)
     return draw;
 }
 
-// Level stuff...
+// World stuff...
 
 V2 direction_to_vec[4] = {
     v2(0, -1),
@@ -137,6 +136,12 @@ V2 player_sensor_offset[4] = {
     v2(1, 0.5),
 };
 
+inline Chunk *CurrentChunk()
+{
+    World *world = state->world;
+    return world->chunks + (player->chunk_x + world->width * player->chunk_y);
+}
+
 struct SensorResult
 {
     u32 status;
@@ -147,6 +152,8 @@ struct SensorResult
 SensorResult ReadSensor(V2 position, Direction direction)
 {
     SensorResult result = {};
+
+    Chunk *chunk = CurrentChunk();
 
     bool horizontal = direction & 1;
     V2 dir = direction_to_vec[direction];
@@ -177,14 +184,14 @@ SensorResult ReadSensor(V2 position, Direction direction)
 
     while (true)
     {
-        if (grid_x < 0 || grid_x >= level->width || grid_y < 0 || grid_y >= level->height)
+        if (grid_x < 0 || grid_x >= 16 || grid_y < 0 || grid_y >= 16)
         {
             result.hit = walk_pos;
             result.status = 2;
             break;
         }
 
-        if (level->tiles[grid_x + grid_y * level->width])
+        if (chunk->tiles[grid_x + grid_y * 16])
         {
             result.hit = walk_pos;
             result.status = 1;
@@ -214,127 +221,79 @@ SensorResult ReadSensor(V2 position, Direction direction)
 
 // level stuff...
 
-const char *room_files[] = {
-    "assets/level_0.png",
-};
-
-void LoadRoom(u32 stage)
+void LoadWorld()
 {
     i32 width;
     i32 height;
     i32 channel = 3;
 
-    u8 *data = stbi_load(room_files[stage], &width, &height, &channel, STBI_rgb);
-    assert(data);
+    // u8 *data = stbi_load(level_files[stage], &width, &height, &channel, STBI_rgb);
+    // assert(data);
 
-    assert(state->room_count < lengthof(state->rooms));
-    Room *room = &state->rooms[state->room_count++];
-    assert(width * height < sizeof(room->tiles));
+    state->world_memory.offset = 0;
 
-    room->width = width;
-    room->height = height;
+    state->world = PushStruct(&state->world_memory, World);
+    World *world = state->world;
+    world->width = 2;
+    world->height = 2;
 
-    u8 *walk = data;
+    world->chunks = PushArray(&state->world_memory, Chunk, world->width * world->height);
+    world->chunks[0].width = 16;
+    world->chunks[0].height = 16;
+    world->chunks[0].tiles = PushBytes(&state->world_memory, 256);
 
-    for (i32 y = 0; y < height; ++y)
-    {
-        for (i32 x = 0; x < width; ++x)
-        {
-            if (walk[0] == 0 && walk[1] == 0 && walk[2] == 0)
-            {
-                room->tiles[x + y * room->width] = 1;
-            }
+    u8 tiles00[16][16] = {
+        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
+        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, },
+    };
 
-            if (walk[0] == 0 && walk[1] == 0 && walk[2] == 255)
-            {
-                room->flags |= ROOM_HAS_PLAYER_SPAWN;
-                room->player_spawn = v2i(x, y);
-            }
+    memcpy(world->chunks[0].tiles, tiles00, 256);
 
-            if (walk[0] == 255 && walk[1] == 0 && walk[2] == 0)
-            {
-                assert(room->enemy_count < lengthof(room->enemies));
-                Enemy *enemy = &room->enemies[room->enemy_count++];
-                enemy->position = v2(x, y);
-            }
+    // room->width = width;
+    // room->height = height;
 
-            walk += 3;
-        }
-    }
+    // u8 *walk = data;
+    //
+    // for (i32 y = 0; y < height; ++y)
+    // {
+    //     for (i32 x = 0; x < width; ++x)
+    //     {
+    //         if (walk[0] == 0 && walk[1] == 0 && walk[2] == 0)
+    //         {
+    //             world.tiles[x + y * width] = 1;
+    //         }
+    //
+    //         if (walk[0] == 0 && walk[1] == 0 && walk[2] == 255)
+    //         {
+    //             player.position = v2(x, y);
+    //         }
+    //
+    //         if (walk[0] == 255 && walk[1] == 0 && walk[2] == 0)
+    //         {
+    //             assert(world.enemy_count < lengthof(world.enemies));
+    //             Enemy *enemy = world.enemies + world.enemy_count++;
+    //             enemy->position = v2(x, y);
+    //         }
+    //
+    //         walk += 3;
+    //     }
+    // }
 
-    stbi_image_free(data);
-}
-
-void LoadAllRooms()
-{
-    for (u32 i = 0; i < lengthof(room_files); ++i)
-    {
-        LoadRoom(i);
-    }
-}
-
-Room *FindRoom(bool contains_spawn, Direction entrance)
-{
-    for (u32 i = 0; i < state->room_count; ++i)
-    {
-        Room *room = &state->rooms[i];
-
-        if (room->flags & ROOM_HAS_PLAYER_SPAWN)
-        {
-            if (contains_spawn)
-            {
-                return room;
-            }
-
-            continue;
-        }
-
-        if (room->direction_entrance == entrance)
-        {
-            return room;
-        }
-    }
-
-    return NULL;
-}
-
-void GenerateLevel()
-{
-    state->level = {};
-
-    Room *start_room = FindRoom(true, Direction_Up);
-    if (!start_room)
-    {
-        // We are sad
-        assert(0);
-    }
-
-    V2i offsets[32] = {};
-    Room *rooms[32] = {};
-
-    rooms[0] = start_room;
-
-    V2i parent_offset = v2i(0, 0);
-    Room *parent = start_room;
-
-    for (u32 i = 1; i < 32; ++i)
-    {
-        // offset parent
-        // offset exit
-        // unit direction
-        // - offset entrance
-
-        Room *self = FindRoom(false, direction_to_opposite[parent->direction_exit]);
-        assert(self);
-
-        V2i offset = parent_offset + parent->offset_exit + direction_to_ivec[parent->direction_exit] - self->offset_entrance;
-        
-        offsets[i] = offset;
-        rooms[i] = self;
-
-        parent = self;
-        parent_offset = offset;
-    }
+    // stbi_image_free(data);
 }
 
 void GameInitialize(u8 *memory, u64 memory_size)
@@ -347,18 +306,21 @@ void GameInitialize(u8 *memory, u64 memory_size)
     arena->capacity = memory_size;
     arena->offset = sizeof(GameState);
 
-    LoadAllRooms();
-    GenerateLevel();
+    state->world_memory.capacity = KiloByte(10);
+    state->world_memory.memory = PushBytes(arena, state->world_memory.capacity);
+
+    LoadWorld();
+
+    player->position = v2(2, 2);
 }
 
 RenderData *GameUpdate(GameInput *input_data, u8 *memory)
 {
     input = input_data;
     state = (GameState *) memory;
-    printf("%f\n", input->delta);
 
     player = &state->player;
-    level = &state->level;
+    World *world = state->world;
 
     vertex_count = {};
     level_buffer = {};
@@ -367,10 +329,9 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
 
     if (KeyJustDown(Key_R))
     {
-        // Reload all resources here
-        state->room_count = 0;
-        LoadAllRooms();
-        GenerateLevel();
+        LoadWorld();
+        *player = {};
+        player->position = v2(2, 2);
     }
 
     if (!(player->flags & PLAYER_MOVING))
@@ -411,9 +372,11 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
         player->position += direction_to_vec[player->direction] * move_dist;
     }
 
-    for (u32 i = 0; i < level->enemy_count; ++i)
+    Chunk *chunk = CurrentChunk();
+
+    for (u32 i = 0; i < chunk->enemy_count; ++i)
     {
-        Enemy *enemy = &level->enemies[i];
+        Enemy *enemy = chunk->enemies + i;
         if (AABBCollision(player->position, player->position + v2(1), enemy->position, enemy->position + v2(1)))
         {
             enemy->flags |= ENEMY_DEAD;
@@ -431,20 +394,20 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
 
     RenderData *render = &state->render_data;
 
-    for (u32 y = 0; y < level->height; ++y)
+    for (u32 y = 0; y < 16; ++y)
     {
-        for (u32 x = 0; x < level->width; ++x)
+        for (u32 x = 0; x < 16; ++x)
         {
-            if (level->tiles[x + y * level->width])
+            if (chunk->tiles[x + y * 16])
             {
                 DrawQuad(&level_buffer, v2(x * 32, y * 32), v2(32), v3(0, 0, 1));
             }
         }
     }
 
-    for (u32 i = 0; i < level->enemy_count; ++i)
+    for (u32 i = 0; i < chunk->enemy_count; ++i)
     {
-        Enemy *enemy = &level->enemies[i];
+        Enemy *enemy = chunk->enemies + i;
 
         if (enemy->flags & ENEMY_DEAD)
         {

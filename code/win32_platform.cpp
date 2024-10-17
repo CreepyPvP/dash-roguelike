@@ -11,6 +11,8 @@
 #include "game_math.cpp"
 #include "opengl_renderer.cpp"
 
+#pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+
 GLFWwindow *window;
 i32 window_width = 960;
 i32 window_height = 540;
