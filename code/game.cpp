@@ -142,83 +142,6 @@ inline Chunk *CurrentChunk()
     return world->chunks + (player->chunk_x + world->width * player->chunk_y);
 }
 
-struct SensorResult
-{
-    u32 status;
-    f32 distance;
-    V2 hit;
-};
-
-SensorResult ReadSensor(V2 position, Direction direction)
-{
-    SensorResult result = {};
-
-    Chunk *chunk = CurrentChunk();
-
-    bool horizontal = direction & 1;
-    V2 dir = direction_to_vec[direction];
-    i32 grid_x = position.x;
-    i32 grid_y = position.y;
-
-    V2 walk_pos = position;
-
-    switch (direction)
-    {
-        case Direction_Up: { 
-            walk_pos.y = Floor(walk_pos.y);
-            break;
-        }
-        case Direction_Down: { 
-            walk_pos.y = Floor(walk_pos.y) + 1;
-            break;
-        }
-        case Direction_Left: { 
-            walk_pos.x = Floor(walk_pos.x) + 1;
-            break;
-        }
-        case Direction_Right: { 
-            walk_pos.x = Floor(walk_pos.x);
-            break;
-        }
-    }
-
-    while (true)
-    {
-        if (grid_x < 0 || grid_x >= 16 || grid_y < 0 || grid_y >= 16)
-        {
-            result.hit = walk_pos;
-            result.status = 2;
-            break;
-        }
-
-        if (chunk->tiles[grid_x + grid_y * 16])
-        {
-            result.hit = walk_pos;
-            result.status = 1;
-            break;
-        }
-
-        grid_x += dir.x;
-        grid_y += dir.y;
-        walk_pos += dir;
-    }
-
-    if (horizontal)
-    {
-        result.distance = Abs(walk_pos.x - position.x);
-    }
-    else
-    {
-        result.distance = Abs(walk_pos.y - position.y);
-    }
-
-    // DebugRay *ray = AllocDebugRay();
-    // ray->p0 = position;
-    // ray->p1 = result.hit;
-
-    return result;
-}
-
 // level stuff...
 
 void LoadWorld()
@@ -311,7 +234,7 @@ void GameInitialize(u8 *memory, u64 memory_size)
 
     LoadWorld();
 
-    player->position = v2(2, 2);
+    state->player.position = v2(2, 2);
 }
 
 RenderData *GameUpdate(GameInput *input_data, u8 *memory)
@@ -334,54 +257,7 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
         player->position = v2(2, 2);
     }
 
-    if (!(player->flags & PLAYER_MOVING))
-    {
-        if (KeyDown(Key_W))
-        {
-            player->flags |= PLAYER_MOVING;
-            player->direction = Direction_Up;
-        }
-        else if (KeyDown(Key_S))
-        {
-            player->flags |= PLAYER_MOVING;
-            player->direction = Direction_Down;
-        }
-        else if (KeyDown(Key_A))
-        {
-            player->flags |= PLAYER_MOVING;
-            player->direction = Direction_Left;
-        }
-        else if (KeyDown(Key_D))
-        {
-            player->flags |= PLAYER_MOVING;
-            player->direction = Direction_Right;
-        }
-    }
-
-    if (player->flags & PLAYER_MOVING)
-    {
-        SensorResult raycast = ReadSensor(player->position + player_sensor_offset[player->direction], player->direction);
-
-        f32 move_dist = input->delta * 50;
-        if (move_dist >= raycast.distance)
-        {
-            move_dist = raycast.distance;
-            player->flags &= ~PLAYER_MOVING;
-        }
-
-        player->position += direction_to_vec[player->direction] * move_dist;
-    }
-
     Chunk *chunk = CurrentChunk();
-
-    for (u32 i = 0; i < chunk->enemy_count; ++i)
-    {
-        Enemy *enemy = chunk->enemies + i;
-        if (AABBCollision(player->position, player->position + v2(1), enemy->position, enemy->position + v2(1)))
-        {
-            enemy->flags |= ENEMY_DEAD;
-        }
-    }
 
     // We render at 960 x 540
     // 0,0 ------------> 960,0
