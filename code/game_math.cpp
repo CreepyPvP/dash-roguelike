@@ -2,6 +2,18 @@
 
 #include <math.h>
 
+f32 Halton(u32 i, u32 b)
+{
+    f32 f = 1;
+    f32 r = 0;
+    while (i > 0) {
+        f = f / b;
+        r += f * (i % b);
+        i = floor(i / b);
+    }
+
+    return r;
+}
 
 f32 Floor(f32 a)
 {

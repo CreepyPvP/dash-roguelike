@@ -179,7 +179,7 @@ void DrawFrame(RenderData *render_data, i32 window_width, i32 window_height)
     glUseProgram(default_shader.id);
 
     MultiDrawCommand(&render_data->level);
-    MultiDrawCommand(&render_data->enemies);
+    MultiDrawCommand(&render_data->entities);
     MultiDrawCommand(&render_data->player);
     MultiDrawCommand(&render_data->debug);
 }

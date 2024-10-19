@@ -38,7 +38,7 @@ Vertex vertex_buffer[4096];
 
 MultiDrawBuffer level_buffer;
 MultiDrawBuffer debug_buffer;
-MultiDrawBuffer enemy_buffer;
+MultiDrawBuffer entity_buffer;
 MultiDrawBuffer player_buffer;
 
 inline MultiDraw BufferToDraw(MultiDrawBuffer *buffer)
@@ -93,73 +93,55 @@ void LoadWorld()
     i32 height;
     i32 channel = 3;
 
-    // u8 *data = stbi_load(level_files[stage], &width, &height, &channel, STBI_rgb);
-    // assert(data);
-
     state->world_memory.offset = 0;
 
-    state->world = PushStruct(&state->world_memory, World);
+    state->world = PushStructZero(&state->world_memory, World);
     World *world = state->world;
     world->width = 2;
     world->height = 2;
 
-    world->chunks = PushArray(&state->world_memory, Chunk, world->width * world->height);
+    world->chunks = PushArrayZero(&state->world_memory, Chunk, world->width * world->height);
     world->chunks[0].width = 16;
     world->chunks[0].height = 16;
-    world->chunks[0].tiles = PushBytes(&state->world_memory, 256);
+}
 
-    u8 tiles00[16][16] = {
-        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, },
-        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
-        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
-        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
-        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
-        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
-        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
-        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
-        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
-        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
-        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
-        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
-        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
-        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
-        { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, },
-        { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, },
-    };
+void LoadState()
+{
+    player = &state->player;
 
-    memcpy(world->chunks[0].tiles, tiles00, 256);
+    LoadWorld();
+    *player = {};
+    player->tile_x = 2;
+    player->tile_y = 2;
 
-    // room->width = width;
-    // room->height = height;
+    Chunk *chunk = CurrentChunk();
+    chunk->enemy_count = 1;
 
-    // u8 *walk = data;
-    //
-    // for (i32 y = 0; y < height; ++y)
-    // {
-    //     for (i32 x = 0; x < width; ++x)
-    //     {
-    //         if (walk[0] == 0 && walk[1] == 0 && walk[2] == 0)
-    //         {
-    //             world.tiles[x + y * width] = 1;
-    //         }
-    //
-    //         if (walk[0] == 0 && walk[1] == 0 && walk[2] == 255)
-    //         {
-    //             player.position = v2(x, y);
-    //         }
-    //
-    //         if (walk[0] == 255 && walk[1] == 0 && walk[2] == 0)
-    //         {
-    //             assert(world.enemy_count < lengthof(world.enemies));
-    //             Enemy *enemy = world.enemies + world.enemy_count++;
-    //             enemy->position = v2(x, y);
-    //         }
-    //
-    //         walk += 3;
-    //     }
-    // }
+    for (u32 i = 0; i < chunk->enemy_count; ++i)
+    {
+        chunk->enemies[i].position = v2(Round(Halton(i + 1, 2) * chunk->width), Round(Halton(i + 1, 3) * chunk->height));
+    }
+}
 
-    // stbi_image_free(data);
+bool IsTileFree(i32 tile_x, i32 tile_y)
+{
+    Chunk *chunk = CurrentChunk();
+
+    if (tile_x < 0 || tile_y < 0 || tile_x >= chunk->width || tile_y >= chunk->height)
+    {
+        return false;
+    }
+
+    for (u32 i = 0; i < chunk->tower_count; ++i)
+    {
+        Tower *tower = chunk->towers + i;
+        if (tower->tile_x == tile_x && tower->tile_y == tile_y)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void GameInitialize(u8 *memory, u64 memory_size)
@@ -175,10 +157,7 @@ void GameInitialize(u8 *memory, u64 memory_size)
     state->world_memory.capacity = KiloByte(10);
     state->world_memory.memory = PushBytes(arena, state->world_memory.capacity);
 
-    LoadWorld();
-
-    state->player.tile_x = 2;
-    state->player.tile_y = 2;
+    LoadState();
 }
 
 RenderData *GameUpdate(GameInput *input_data, u8 *memory)
@@ -192,42 +171,79 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
     vertex_count = {};
     level_buffer = {};
     debug_buffer = {};
-    enemy_buffer = {};
+    entity_buffer = {};
     player_buffer = {};
 
     if (KeyJustDown(Key_R))
     {
-        LoadWorld();
-        *player = {};
-        player->tile_x = 2;
-        player->tile_y = 2;
+        LoadState();
     }
 
     Chunk *chunk = CurrentChunk();
 
+    // Begin Player stuff
+
     V2 player_local = v2(player->tile_x + player->offset.x, player->tile_y + player->offset.y);
+    V2 player_move = {};
 
     if (KeyDown(Key_W))
     {
-        player_local.y -= input->delta * 5;
+        player_move.y -= 1;
     }
     if (KeyDown(Key_S))
     {
-        player_local.y += input->delta * 5;
+        player_move.y += 1;
     }
     if (KeyDown(Key_A))
     {
-        player_local.x -= input->delta * 5;
+        player_move.x -= 1;
     }
     if (KeyDown(Key_D))
     {
-        player_local.x += input->delta * 5;
+        player_move.x += 1;
     }
+    
+    player_move = Norm(player_move) * 5;
+    player_local += input->delta * player_move;
 
-    player->tile_x = Floor(player_local.x);
-    player->tile_y = Floor(player_local.y);
+    player->velocity = player->velocity + input->delta * ();
+
+    i32 new_tile_x = Round(player_local.x);
+    i32 new_tile_y = Round(player_local.y);
+
+    // if (IsTileFree(new_tile_x, new_tile_y))
+    // {
+    player->tile_x = new_tile_x;
+    player->tile_y = new_tile_y;
     player->offset.x = player_local.x - player->tile_x;
     player->offset.y = player_local.y - player->tile_y;
+    // }
+    // else
+    // {
+    //     player_local = player_start;
+    // }
+
+    // End player stuff
+
+    if (KeyJustDown(Key_C))
+    {
+        assert(chunk->tower_count < lengthof(chunk->towers));
+        Tower *tower = chunk->towers + chunk->tower_count++;
+        tower->tile_x = player->tile_x;
+        tower->tile_y = player->tile_y - 1;
+    }
+
+    for (u32 i = 0; i < chunk->enemy_count; ++i)
+    {
+        Enemy *enemy = chunk->enemies + i;
+        V2 new_pos = enemy->position + Norm(player_local - enemy->position) * input->delta;
+        i32 tile_x = Round(new_pos.x);
+        i32 tile_y = Round(new_pos.y);
+        if (IsTileFree(tile_x, tile_y))
+        {
+            enemy->position = new_pos;
+        }
+    }
 
     // We render at 960 x 540
     // 0,0 ------------> 960,0
@@ -248,15 +264,16 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
         }
     }
 
-    for (u32 y = 0; y < 16; ++y)
+    for (u32 i = 0; i < chunk->enemy_count; ++i)
     {
-        for (u32 x = 0; x < 16; ++x)
-        {
-            if (chunk->tiles[x + y * 16])
-            {
-                DrawQuad(&level_buffer, v2(x * 32, y * 32), v2(32), v3(0.1, 0.5, 0.1));
-            }
-        }
+        Enemy *enemy = chunk->enemies + i;
+        DrawQuad(&entity_buffer, enemy->position * 32, v2(32), v3(0.8, 0.2, 0.2));
+    }
+
+    for (u32 i = 0; i < chunk->tower_count; ++i)
+    {
+        Tower *tower = chunk->towers + i;
+        DrawQuad(&entity_buffer, v2(tower->tile_x * 32, tower->tile_y * 32), v2(32), v3(0.2, 0.2, 0.8));
     }
 
     DrawQuad(&player_buffer, v2(player->tile_x, player->tile_y) * 32, v2(32), v3(0));
@@ -266,7 +283,7 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
     render->vertex_buffer = vertex_buffer;
     render->debug = BufferToDraw(&debug_buffer);
     render->level = BufferToDraw(&level_buffer);
-    render->enemies = BufferToDraw(&enemy_buffer);
+    render->entities = BufferToDraw(&entity_buffer);
     render->player = BufferToDraw(&player_buffer);
 
     return render;

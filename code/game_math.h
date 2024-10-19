@@ -4,6 +4,8 @@
 
 f32 Floor(f32 a);
 
+f32 Halton(u32 i, u32 b);
+
 inline f32 Min(f32 a, f32 b)
 {
     return a < b ? a : b;

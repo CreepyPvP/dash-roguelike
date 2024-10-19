@@ -72,7 +72,7 @@ struct RenderData
 {
     MultiDraw debug;
     MultiDraw level;
-    MultiDraw enemies;
+    MultiDraw entities;
     MultiDraw player;
 
     u32 vertex_count;

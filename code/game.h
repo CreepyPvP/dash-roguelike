@@ -12,11 +12,13 @@ struct Player
     u32 flags;
 
     V2 offset;
+    V2 velocity;
     i32 tile_x;
     i32 tile_y;
 
     i32 chunk_x;
     i32 chunk_y;
+
 };
 
 struct Enemy
@@ -25,14 +27,22 @@ struct Enemy
     V2 position;
 };
 
+struct Tower
+{
+    i32 tile_x;
+    i32 tile_y;
+};
+
 struct Chunk
 {
     u32 width;
     u32 height;
-    u8 *tiles;
 
     u32 enemy_count;
     Enemy enemies[64];
+
+    u32 tower_count;
+    Tower towers[64];
 };
 
 struct World

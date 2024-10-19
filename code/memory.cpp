@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 Arena scratch = {};
 
@@ -30,4 +31,16 @@ u8 *AllocateBytes(Arena *arena, u64 size, u64 align)
     assert(start + size <= arena->capacity);
     arena->offset = end;
     return arena->memory + start;
+}
+
+u8 *AllocateBytesZero(Arena *arena, u64 size, u64 align)
+{
+    u64 start = (arena->offset + align - 1) & ~(align - 1);
+    u64 end = start + size;
+    assert(start + size <= arena->capacity);
+    arena->offset = end;
+
+    u8 *memory = arena->memory + start;
+    memset(memory, 0, size);
+    return memory;
 }

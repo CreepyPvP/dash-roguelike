@@ -19,9 +19,14 @@ struct TempMemory
 #define PushBytes(arena, size) ((u8 *) AllocateBytes(arena, size, alignof(u8 *)))
 #define PushArray(arena, type, size) ((type *) AllocateBytes(arena, sizeof(type) * size, alignof(type)))
 
+#define PushStructZero(arena, type) ((type *) AllocateBytesZero(arena, sizeof(type), alignof(type)))
+#define PushBytesZero(arena, size) ((u8 *) AllocateBytesZero(arena, size, alignof(u8 *)))
+#define PushArrayZero(arena, type, size) ((type *) AllocateBytesZero(arena, sizeof(type) * size, alignof(type)))
+
 TempMemory BeginTempRegion(Arena *arena);
 void EndTempRegion(TempMemory region);
 u8 *AllocateBytes(Arena *arena, u64 size, u64 align);
+u8 *AllocateBytesZero(Arena *arena, u64 size, u64 align);
 
 TempMemory ScratchAllocate();
 
