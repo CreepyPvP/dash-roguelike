@@ -66,7 +66,13 @@ void V3::operator+=(V3 b)
 
 V2 Norm(V2 a)
 {
-    f32 length = sqrt(a.x * a.x + a.y * a.y);
+    f32 square_length = a.x * a.x + a.y * a.y;
+    if (square_length < 0.001)
+    {
+        return v2(0);
+    }
+
+    f32 length = sqrt(square_length);
     return a / length;
 }
 

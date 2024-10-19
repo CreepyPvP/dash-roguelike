@@ -11,14 +11,13 @@ struct Player
 {
     u32 flags;
 
-    V2 offset;
-    V2 velocity;
-    i32 tile_x;
-    i32 tile_y;
+    V2 smooth_position;
+    V2 smooth_velocity;
+    V2 target_position;
+    V2 target_velocity;
 
     i32 chunk_x;
     i32 chunk_y;
-
 };
 
 struct Enemy

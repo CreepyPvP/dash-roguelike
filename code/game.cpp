@@ -111,8 +111,8 @@ void LoadState()
 
     LoadWorld();
     *player = {};
-    player->tile_x = 2;
-    player->tile_y = 2;
+    player->target_position = v2(2);
+    player->smooth_position = v2(2);
 
     Chunk *chunk = CurrentChunk();
     chunk->enemy_count = 1;
@@ -164,7 +164,7 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
 {
     input = input_data;
     state = (GameState *) memory;
-
+    f32 delta = input->delta;
     player = &state->player;
     World *world = state->world;
 
@@ -183,7 +183,6 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
 
     // Begin Player stuff
 
-    V2 player_local = v2(player->tile_x + player->offset.x, player->tile_y + player->offset.y);
     V2 player_move = {};
 
     if (KeyDown(Key_W))
@@ -204,19 +203,33 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
     }
     
     player_move = Norm(player_move) * 5;
-    player_local += input->delta * player_move;
 
-    player->velocity = player->velocity + input->delta * ();
+    // frequency
+    f32 f = 3.54;
+    // damping. values < 1 will vibrate
+    f32 zeta = 0.74;
+    // "Acceleration". High values will overshoot, negative values 
+    f32 r = 2;
 
-    i32 new_tile_x = Round(player_local.x);
-    i32 new_tile_y = Round(player_local.y);
+    f32 k1 = zeta / (PI * f);
+    f32 k2 = 1 / (4 * PI * PI * f * f);
+    f32 k3 = r * zeta / (2 * PI * f);
+    
+    V2 prev_smooth_velocity = player->smooth_velocity;
+    player->target_position += player_move * delta;
+    player->target_velocity = player_move;
+    player->smooth_position += player->smooth_velocity * delta;
+    player->smooth_velocity += (player->target_position + player->target_velocity * k3 - player->smooth_position - prev_smooth_velocity * k1) / k2 * delta;
+
+    // i32 new_tile_x = Round(player_local.x);
+    // i32 new_tile_y = Round(player_local.y);
 
     // if (IsTileFree(new_tile_x, new_tile_y))
     // {
-    player->tile_x = new_tile_x;
-    player->tile_y = new_tile_y;
-    player->offset.x = player_local.x - player->tile_x;
-    player->offset.y = player_local.y - player->tile_y;
+    // player->tile_x = new_tile_x;
+    // player->tile_y = new_tile_y;
+    // player->offset.x = player_local.x - player->tile_x;
+    // player->offset.y = player_local.y - player->tile_y;
     // }
     // else
     // {
@@ -225,18 +238,21 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
 
     // End player stuff
 
+    i32 player_tile_x = Round(player->target_position.x);
+    i32 player_tile_y = Round(player->target_position.y);
+
     if (KeyJustDown(Key_C))
     {
         assert(chunk->tower_count < lengthof(chunk->towers));
         Tower *tower = chunk->towers + chunk->tower_count++;
-        tower->tile_x = player->tile_x;
-        tower->tile_y = player->tile_y - 1;
+        tower->tile_x = player_tile_x;
+        tower->tile_y = player_tile_y;
     }
 
     for (u32 i = 0; i < chunk->enemy_count; ++i)
     {
         Enemy *enemy = chunk->enemies + i;
-        V2 new_pos = enemy->position + Norm(player_local - enemy->position) * input->delta;
+        V2 new_pos = enemy->position + Norm(player->smooth_position - enemy->position) * delta;
         i32 tile_x = Round(new_pos.x);
         i32 tile_y = Round(new_pos.y);
         if (IsTileFree(tile_x, tile_y))
@@ -276,8 +292,8 @@ RenderData *GameUpdate(GameInput *input_data, u8 *memory)
         DrawQuad(&entity_buffer, v2(tower->tile_x * 32, tower->tile_y * 32), v2(32), v3(0.2, 0.2, 0.8));
     }
 
-    DrawQuad(&player_buffer, v2(player->tile_x, player->tile_y) * 32, v2(32), v3(0));
-    DrawQuad(&player_buffer, player_local * 32, v2(32), v3(1));
+    // DrawQuad(&player_buffer, v2(player->tile_x, player->tile_y) * 32, v2(32), v3(0));
+    DrawQuad(&player_buffer, player->smooth_position * 32, v2(32), v3(1));
 
     render->vertex_count = vertex_count;
     render->vertex_buffer = vertex_buffer;

@@ -2,6 +2,8 @@
 
 #include "defines.h"
 
+#define PI 3.1415
+
 f32 Floor(f32 a);
 
 f32 Halton(u32 i, u32 b);
