@@ -89,6 +89,67 @@ Shader LoadShader(const char* vertex_file, const char* frag_file)
     return shader;
 }
 
+void LoadMesh(ufbx_mesh *mesh)
+{
+    TempMemory temp_region = ScratchAllocate();
+
+    // TODO: mesh->material_parts contains the mesh split by material. Maybe use that?
+    u32 num_triangles = mesh->num_triangles;
+    Vertex *vertices = PushArray(temp_region.arena, Vertex, num_triangles * 3);
+    u32 num_vertices = 0;
+
+    u32 num_tri_indices = mesh->max_face_triangles * 3;
+    u32 *tri_indices = PushArray(temp_region.arena, u32, num_tri_indices);
+
+    for (u32 face_id = 0; mesh->num_faces; ++face_id)
+    {
+        ufbx_face face = mesh->faces.data[mesh->face_indices.data[face_id]];
+
+        u32 num_tris = ufbx_triangulate_face(tri_indices, num_tri_indices, mesh, face);
+
+        for (u32 i = 0; i < num_tris * 3; ++i) {
+            u32 index = tri_indices[i];
+
+            // Fix that
+            Vertex *v = &vertices[num_vertices++];
+            v->position = ufbx_get_vertex_vec3(&mesh->vertex_position, index);
+            v->normal = ufbx_get_vertex_vec3(&mesh->vertex_normal, index);
+            v->uv = ufbx_get_vertex_vec2(&mesh->vertex_uv, index);
+        }
+    }
+
+    // TODO: Eliminate redundant vertices
+
+    EndTempRegion(temp_region);
+}
+
+void DoFbxTesting()
+{
+    ufbx_load_opts opts = {}; 
+    opts.target_axes = ufbx_axes_right_handed_z_up;
+    opts.target_unit_meters = 1.0f;
+    opts.target_camera_axes = ufbx_axes_right_handed_z_up;
+    opts.target_light_axes = ufbx_axes_right_handed_z_up;
+    opts.space_conversion = UFBX_SPACE_CONVERSION_ADJUST_TRANSFORMS;
+
+    ufbx_error error; 
+    ufbx_scene *scene = ufbx_load_file("assets/alien.fbx", &opts, &error);
+
+    if (!scene) 
+    {
+        fprintf(stderr, "Failed to load: %s\n", error.description.data);
+        assert(scene);
+    }
+
+    for (i32 i = 0; i < scene->meshes.count; ++i)
+    {
+        ufbx_mesh *mesh = scene->meshes.data + i;
+        LoadMesh(mesh);
+    }
+
+    ufbx_free_scene(scene);
+}
+
 // Api lifecycle
 //
 

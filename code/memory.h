@@ -17,11 +17,11 @@ struct TempMemory
 
 #define PushStruct(arena, type) ((type *) AllocateBytes(arena, sizeof(type), alignof(type)))
 #define PushBytes(arena, size) ((u8 *) AllocateBytes(arena, size, alignof(u8 *)))
-#define PushArray(arena, type, size) ((type *) AllocateBytes(arena, sizeof(type) * size, alignof(type)))
+#define PushArray(arena, type, count) ((type *) AllocateBytes(arena, sizeof(type) * (count), alignof(type)))
 
 #define PushStructZero(arena, type) ((type *) AllocateBytesZero(arena, sizeof(type), alignof(type)))
 #define PushBytesZero(arena, size) ((u8 *) AllocateBytesZero(arena, size, alignof(u8 *)))
-#define PushArrayZero(arena, type, size) ((type *) AllocateBytesZero(arena, sizeof(type) * size, alignof(type)))
+#define PushArrayZero(arena, type, count) ((type *) AllocateBytesZero(arena, sizeof(type) * (count), alignof(type)))
 
 TempMemory BeginTempRegion(Arena *arena);
 void EndTempRegion(TempMemory region);

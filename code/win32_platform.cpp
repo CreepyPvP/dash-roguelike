@@ -7,6 +7,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#define UFBX_ENABLE_TRIANGULATION
+#include "ufbx.cpp"
+
 #include "memory.cpp"
 #include "game_math.cpp"
 #include "opengl_renderer.cpp"
@@ -227,6 +230,7 @@ i32 main()
 #endif
 
     InitializeRenderer();
+    DoFbxTesting();
 
     u64 game_memory_size = MegaByte(10);
     u8 *game_memory = (u8 *) malloc(game_memory_size);
