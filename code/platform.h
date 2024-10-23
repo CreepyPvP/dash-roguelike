@@ -51,7 +51,9 @@ inline bool KeyJustDown(Key key)
 
 struct Vertex
 {
-    V2 position;
+    V3 position;
+    V3 normal;
+    V2 uv;
     V3 color;
 };
 

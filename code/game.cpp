@@ -56,19 +56,27 @@ void DrawQuad(MultiDrawBuffer *buffer, V2 topleft, V2 size, V3 color)
     assert(buffer->primitive_count < lengthof(buffer->offsets));
 
     Vertex *p0 = &vertex_buffer[vertex_count + 0];
-    p0->position = v2(topleft.x, topleft.y);
+    p0->position = v3(topleft.x, topleft.y, 0);
+    p0->normal = v3(0, 0, 1);
+    p0->uv = v2(0, 0);
     p0->color = color;
 
     Vertex *p1 = &vertex_buffer[vertex_count + 1];
-    p1->position = v2(topleft.x + size.x, topleft.y);
+    p1->position = v3(topleft.x + size.x, topleft.y, 0);
+    p1->normal = v3(0, 0, 1);
+    p1->uv = v2(0, 0);
     p1->color = color;
 
     Vertex *p2 = &vertex_buffer[vertex_count + 2];
-    p2->position = v2(topleft.x, topleft.y + size.y);
+    p2->position = v3(topleft.x, topleft.y + size.y, 0);
+    p2->normal = v3(0, 0, 1);
+    p2->uv = v2(0, 0);
     p2->color = color;
 
     Vertex *p3 = &vertex_buffer[vertex_count + 3];
-    p3->position = v2(topleft.x + size.x, topleft.y + size.y);
+    p3->position = v3(topleft.x + size.x, topleft.y + size.y, 0);
+    p3->normal = v3(0, 0, 1);
+    p3->uv = v2(0, 0);
     p3->color = color;
 
     u32 primitive = buffer->primitive_count;

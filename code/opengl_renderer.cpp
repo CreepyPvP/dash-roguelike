@@ -89,6 +89,16 @@ Shader LoadShader(const char* vertex_file, const char* frag_file)
     return shader;
 }
 
+inline V2 ufbx_to_v2(ufbx_vec2 vec)
+{
+    return { (f32) vec.x, (f32) vec.y };
+}
+
+inline V3 ufbx_to_v3(ufbx_vec3 vec)
+{
+    return { (f32) vec.x, (f32) vec.y, (f32) vec.z };
+}
+
 void LoadMesh(ufbx_mesh *mesh)
 {
     TempMemory temp_region = ScratchAllocate();
@@ -101,24 +111,39 @@ void LoadMesh(ufbx_mesh *mesh)
     u32 num_tri_indices = mesh->max_face_triangles * 3;
     u32 *tri_indices = PushArray(temp_region.arena, u32, num_tri_indices);
 
-    for (u32 face_id = 0; mesh->num_faces; ++face_id)
+    for (u32 face_id = 0; face_id < mesh->num_faces; ++face_id)
     {
-        ufbx_face face = mesh->faces.data[mesh->face_indices.data[face_id]];
+        // TODO: If this does not work look here first :)
+        ufbx_face face = mesh->faces.data[face_id];
 
         u32 num_tris = ufbx_triangulate_face(tri_indices, num_tri_indices, mesh, face);
 
         for (u32 i = 0; i < num_tris * 3; ++i) {
             u32 index = tri_indices[i];
 
-            // Fix that
-            Vertex *v = &vertices[num_vertices++];
-            v->position = ufbx_get_vertex_vec3(&mesh->vertex_position, index);
-            v->normal = ufbx_get_vertex_vec3(&mesh->vertex_normal, index);
-            v->uv = ufbx_get_vertex_vec2(&mesh->vertex_uv, index);
+            Vertex *v = vertices + num_vertices;
+            v->position = ufbx_to_v3(ufbx_get_vertex_vec3(&mesh->vertex_position, index));
+            v->normal = ufbx_to_v3(ufbx_get_vertex_vec3(&mesh->vertex_normal, index));
+            v->uv = ufbx_to_v2(ufbx_get_vertex_vec2(&mesh->vertex_uv, index));
+            v->color = v3(1);
+
+            num_vertices++;
         }
     }
 
-    // TODO: Eliminate redundant vertices
+    assert(num_vertices == num_triangles * 3);
+
+    ufbx_vertex_stream streams[1] = {
+        { vertices, num_vertices, sizeof(Vertex) },
+    };
+    u32 num_indices = num_triangles * 3;
+    u32 *indices = PushArray(temp_region.arena, u32, num_indices);
+
+    num_vertices = ufbx_generate_indices(streams, 1, indices, num_indices, NULL, NULL);
+
+    // TODO: Create vertex buffer here
+    // create_vertex_buffer(vertices, num_vertices);
+    // create_index_buffer(indices, num_indices);
 
     EndTempRegion(temp_region);
 }
@@ -143,7 +168,7 @@ void DoFbxTesting()
 
     for (i32 i = 0; i < scene->meshes.count; ++i)
     {
-        ufbx_mesh *mesh = scene->meshes.data + i;
+        ufbx_mesh *mesh = scene->meshes.data[i];
         LoadMesh(mesh);
     }
 
