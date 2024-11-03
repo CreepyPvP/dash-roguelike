@@ -49,6 +49,12 @@ inline bool KeyJustDown(Key key)
 // Renderer api...
 //
 
+struct Mesh
+{
+    u32 vao;
+    u32 index_count;
+};
+
 struct Vertex
 {
     V3 position;
@@ -79,7 +85,15 @@ struct RenderData
 
     u32 vertex_count;
     Vertex *vertex_buffer;
+
+    u32 mesh_count;
+    Mesh meshes[16];
 };
 
-typedef RenderData *GameUpdateCall(GameInput *input, u8 *memory);
+struct GameAssets
+{
+    Mesh alien;
+};
+
+typedef RenderData *GameUpdateCall(GameInput *input, GameAssets *assets, u8 *memory);
 typedef void GameInitializeCall(u8 *memory, u64 memory_size);

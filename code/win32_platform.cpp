@@ -20,6 +20,8 @@ GLFWwindow *window;
 i32 window_width = 960;
 i32 window_height = 540;
 
+GameAssets assets = {};
+
 struct GameCode
 {
     bool valid;
@@ -144,6 +146,98 @@ void APIENTRY DebugOutput(GLenum source,
     printf("OPENGL (%s, Source: %s, Type: %s): %s", severity_str, source_str, type_str, message);
 }
 
+// FBX LOADING. MOVE THIS SOMEWHERE ELSE
+
+inline V2 ufbx_to_v2(ufbx_vec2 vec)
+{
+    return { (f32) vec.x, (f32) vec.y };
+}
+
+inline V3 ufbx_to_v3(ufbx_vec3 vec)
+{
+    return { (f32) vec.x, (f32) vec.y, (f32) vec.z };
+}
+
+Mesh LoadFBXMesh(ufbx_mesh *mesh)
+{
+    TempMemory temp_region = ScratchAllocate();
+
+    // TODO: mesh->material_parts contains the mesh split by material. Maybe use that?
+    u32 num_triangles = mesh->num_triangles;
+    Vertex *vertices = PushArray(temp_region.arena, Vertex, num_triangles * 3);
+    u32 num_vertices = 0;
+
+    u32 num_tri_indices = mesh->max_face_triangles * 3;
+    u32 *tri_indices = PushArray(temp_region.arena, u32, num_tri_indices);
+
+    for (u32 face_id = 0; face_id < mesh->num_faces; ++face_id)
+    {
+        // TODO: If this does not work look here first :)
+        ufbx_face face = mesh->faces.data[face_id];
+
+        u32 num_tris = ufbx_triangulate_face(tri_indices, num_tri_indices, mesh, face);
+
+        for (u32 i = 0; i < num_tris * 3; ++i) {
+            u32 index = tri_indices[i];
+
+            Vertex *v = vertices + num_vertices;
+            v->position = ufbx_to_v3(ufbx_get_vertex_vec3(&mesh->vertex_position, index));
+            v->normal = ufbx_to_v3(ufbx_get_vertex_vec3(&mesh->vertex_normal, index));
+            v->uv = ufbx_to_v2(ufbx_get_vertex_vec2(&mesh->vertex_uv, index));
+            v->color = v3(1);
+
+            num_vertices++;
+        }
+    }
+
+    assert(num_vertices == num_triangles * 3);
+
+    ufbx_vertex_stream streams[1] = {
+        { vertices, num_vertices, sizeof(Vertex) },
+    };
+    u32 num_indices = num_triangles * 3;
+    u32 *indices = PushArray(temp_region.arena, u32, num_indices);
+
+    num_vertices = ufbx_generate_indices(streams, 1, indices, num_indices, NULL, NULL);
+
+    Mesh result = CreateMesh(vertices, num_vertices, indices, num_indices);
+
+    EndTempRegion(temp_region);
+
+    return result;
+}
+
+void LoadAllFBXMeshes()
+{
+    ufbx_load_opts opts = {}; 
+    opts.target_axes = ufbx_axes_right_handed_z_up;
+    opts.target_unit_meters = 1.0f;
+    opts.target_camera_axes = ufbx_axes_right_handed_z_up;
+    opts.target_light_axes = ufbx_axes_right_handed_z_up;
+    opts.space_conversion = UFBX_SPACE_CONVERSION_ADJUST_TRANSFORMS;
+
+    ufbx_error error; 
+    ufbx_scene *scene = ufbx_load_file("assets/alien.fbx", &opts, &error);
+
+    if (!scene) 
+    {
+        fprintf(stderr, "Failed to load: %s\n", error.description.data);
+        assert(scene);
+    }
+
+    // for (i32 i = 0; i < scene->meshes.count; ++i)
+    // {
+    //     ufbx_mesh *mesh = scene->meshes.data[i];
+    //     some_mesh = LoadFBXMesh(mesh);
+    // }
+
+    assets.alien = LoadFBXMesh(scene->meshes.data[0]);
+
+    ufbx_free_scene(scene);
+}
+
+// 
+
 FILETIME GetDLLWriteTime()
 {
     WIN32_FIND_DATA file_data = {};
@@ -230,7 +324,7 @@ i32 main()
 #endif
 
     InitializeRenderer();
-    DoFbxTesting();
+    LoadAllFBXMeshes();
 
     u64 game_memory_size = MegaByte(10);
     u8 *game_memory = (u8 *) malloc(game_memory_size);
@@ -273,7 +367,7 @@ i32 main()
         }
         prev_key_states = input.key_states;
 
-        RenderData *render_data = game_code.GameUpdate(&input, game_memory);
+        RenderData *render_data = game_code.GameUpdate(&input, &assets, game_memory);
 
         DrawFrame(render_data, window_width, window_height);
 

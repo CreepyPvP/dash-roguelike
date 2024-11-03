@@ -30,7 +30,6 @@ struct UniformBuffer
 
 UniformBuffer uniforms;
 
-
 // Resources
 //
 
@@ -89,90 +88,34 @@ Shader LoadShader(const char* vertex_file, const char* frag_file)
     return shader;
 }
 
-inline V2 ufbx_to_v2(ufbx_vec2 vec)
+Mesh CreateMesh(Vertex *vertices, u32  vertex_count, u32 *indices, u32 index_count)
 {
-    return { (f32) vec.x, (f32) vec.y };
-}
+    Mesh mesh = {};
+    mesh.index_count = index_count;
 
-inline V3 ufbx_to_v3(ufbx_vec3 vec)
-{
-    return { (f32) vec.x, (f32) vec.y, (f32) vec.z };
-}
+    glGenVertexArrays(1, &mesh.vao);
+    glBindVertexArray(mesh.vao);
 
-void LoadMesh(ufbx_mesh *mesh)
-{
-    TempMemory temp_region = ScratchAllocate();
+    u32 buffers[2];
+    glGenBuffers(2, buffers);
+    glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertex_count, vertices, GL_STATIC_DRAW);
 
-    // TODO: mesh->material_parts contains the mesh split by material. Maybe use that?
-    u32 num_triangles = mesh->num_triangles;
-    Vertex *vertices = PushArray(temp_region.arena, Vertex, num_triangles * 3);
-    u32 num_vertices = 0;
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, false, sizeof(Vertex), (void*) offsetof(Vertex, position));
 
-    u32 num_tri_indices = mesh->max_face_triangles * 3;
-    u32 *tri_indices = PushArray(temp_region.arena, u32, num_tri_indices);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(Vertex), (void*) offsetof(Vertex, normal));
 
-    for (u32 face_id = 0; face_id < mesh->num_faces; ++face_id)
-    {
-        // TODO: If this does not work look here first :)
-        ufbx_face face = mesh->faces.data[face_id];
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(3, 2, GL_FLOAT, false, sizeof(Vertex), (void*) offsetof(Vertex, uv));
 
-        u32 num_tris = ufbx_triangulate_face(tri_indices, num_tri_indices, mesh, face);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * index_count, indices, GL_STATIC_DRAW);
 
-        for (u32 i = 0; i < num_tris * 3; ++i) {
-            u32 index = tri_indices[i];
+    glBindVertexArray(0);
 
-            Vertex *v = vertices + num_vertices;
-            v->position = ufbx_to_v3(ufbx_get_vertex_vec3(&mesh->vertex_position, index));
-            v->normal = ufbx_to_v3(ufbx_get_vertex_vec3(&mesh->vertex_normal, index));
-            v->uv = ufbx_to_v2(ufbx_get_vertex_vec2(&mesh->vertex_uv, index));
-            v->color = v3(1);
-
-            num_vertices++;
-        }
-    }
-
-    assert(num_vertices == num_triangles * 3);
-
-    ufbx_vertex_stream streams[1] = {
-        { vertices, num_vertices, sizeof(Vertex) },
-    };
-    u32 num_indices = num_triangles * 3;
-    u32 *indices = PushArray(temp_region.arena, u32, num_indices);
-
-    num_vertices = ufbx_generate_indices(streams, 1, indices, num_indices, NULL, NULL);
-
-    // TODO: Create vertex buffer here
-    // create_vertex_buffer(vertices, num_vertices);
-    // create_index_buffer(indices, num_indices);
-
-    EndTempRegion(temp_region);
-}
-
-void DoFbxTesting()
-{
-    ufbx_load_opts opts = {}; 
-    opts.target_axes = ufbx_axes_right_handed_z_up;
-    opts.target_unit_meters = 1.0f;
-    opts.target_camera_axes = ufbx_axes_right_handed_z_up;
-    opts.target_light_axes = ufbx_axes_right_handed_z_up;
-    opts.space_conversion = UFBX_SPACE_CONVERSION_ADJUST_TRANSFORMS;
-
-    ufbx_error error; 
-    ufbx_scene *scene = ufbx_load_file("assets/alien.fbx", &opts, &error);
-
-    if (!scene) 
-    {
-        fprintf(stderr, "Failed to load: %s\n", error.description.data);
-        assert(scene);
-    }
-
-    for (i32 i = 0; i < scene->meshes.count; ++i)
-    {
-        ufbx_mesh *mesh = scene->meshes.data[i];
-        LoadMesh(mesh);
-    }
-
-    ufbx_free_scene(scene);
+    return mesh;
 }
 
 // Api lifecycle
@@ -218,19 +161,6 @@ void DrawFrame(RenderData *render_data, i32 window_width, i32 window_height)
 {
     f32 tilesize = 32;
 
-    // Draw enemies
-    // for (u32 i = 0; i < level.enemy_count; ++i)
-    // {
-    //     Enemy *enemy = &level.enemies[i];
-    //     
-    //     if (enemy->flags & ENEMY_DEAD)
-    //     {
-    //         continue;
-    //     }
-    //     
-    //     DrawRect(v2(enemy->position.x * tilesize, enemy->position.y * tilesize), v2(tilesize), v3(0.9, 0.2, 0.2));
-    // }
-
     // Draw debug rays
     // for (u32 i = 0; i < debug_ray_count; ++i)
     // {
@@ -268,63 +198,11 @@ void DrawFrame(RenderData *render_data, i32 window_width, i32 window_height)
     MultiDrawCommand(&render_data->entities);
     MultiDrawCommand(&render_data->player);
     MultiDrawCommand(&render_data->debug);
+
+    for (u32 i = 0; i < render_data->mesh_count; ++i)
+    {
+        Mesh *mesh = render_data->meshes + i;
+        glBindVertexArray(mesh->vao);
+        glDrawElements(GL_TRIANGLES, mesh->index_count, GL_UNSIGNED_INT, NULL);
+    }
 }
-
-// Drawing
-//
-
-// static inline Vertex *AllocVertex()
-// {
-//     assert(vertex_count < 1024);
-//     return &vertex_buffer[vertex_count++];
-// }
-
-// static inline DrawCall *StartDrawCall()
-// {
-//     assert(draw_call_count < 1024);
-//     DrawCall *draw = &draw_call_buffer[draw_call_count++];
-//     draw->offset = vertex_count;
-//     return draw;
-// }
-
-// void DrawQuad(V2 p0, V2 p1, V2 p2, V2 p3, V3 color)
-// {
-//     DrawCall *draw = StartDrawCall();
-//
-//     Vertex *vert0 = AllocVertex();
-//     vert0->position = p0;
-//     vert0->color = color;
-//
-//     Vertex *vert1 = AllocVertex();
-//     vert1->position = p1;
-//     vert1->color = color;
-//
-//     Vertex *vert2 = AllocVertex();
-//     vert2->position = p2;
-//     vert2->color = color;
-//
-//     Vertex *vert3 = AllocVertex();
-//     vert3->position = p3;
-//     vert3->color = color;
-// }
-//
-// void DrawRect(V2 botleft, V2 size, V3 color)
-// {
-//     DrawCall *draw = StartDrawCall();
-//
-//     Vertex *vert0 = AllocVertex();
-//     vert0->position = botleft;
-//     vert0->color = color;
-//
-//     Vertex *vert1 = AllocVertex();
-//     vert1->position = v2(botleft.x + size.x, botleft.y);
-//     vert1->color = color;
-//
-//     Vertex *vert2 = AllocVertex();
-//     vert2->position = v2(botleft.x, botleft.y + size.y);
-//     vert2->color = color;
-//
-//     Vertex *vert3 = AllocVertex();
-//     vert3->position = v2(botleft.x + size.x, botleft.y + size.y);
-//     vert3->color = color;
-// }
