@@ -3,6 +3,7 @@
 #include "game_math.h"
 #include "memory.h"
 #include "platform.h"
+#include "camera.h"
 
 #include <assert.h>
 
@@ -57,8 +58,7 @@ struct GameState
     Arena world_memory;
     RenderData render_data;
 
-    Player player;
-    World *world;
+    Camera camera;
 };
 
 extern GameInput *input;

@@ -69,6 +69,7 @@ struct V3
 
     V3 operator/(f32 t);
     V3 operator-(V3 b);
+    V3 operator+(V3 b);
     void operator+=(V3 b);
 };
 
@@ -96,6 +97,11 @@ inline V3 Cross(V3 a, V3 b)
     return result;
 }
 
+inline f32 Radians(f32 a)
+{
+    return a / 180 * PI;
+}
+
 V2 Norm(V2 a);
 
 V3 Norm(V3 a);
@@ -108,6 +114,7 @@ struct Mat4
 };
 
 Mat4 Ortho(f32 l, f32 r, f32 b, f32 t, f32 n, f32 f);
+Mat4 perspective(f32 fov, f32 aspect, f32 near_plane, f32 far_plane);
 Mat4 LookAt(V3 eye, V3 target, V3 up);
 
 bool AABBCollision(V2 bl0, V2 tr0, V2 bl1, V2 tr1);

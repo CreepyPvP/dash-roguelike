@@ -123,7 +123,9 @@ Mesh CreateMesh(Vertex *vertices, u32  vertex_count, u32 *indices, u32 index_cou
 
 void InitializeRenderer()
 {
-    glDisable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
 
     default_shader = LoadShader("shader/default.vert", "shader/default.frag");
 
@@ -178,8 +180,9 @@ void DrawFrame(RenderData *render_data, i32 window_width, i32 window_height)
     f32 aspect = (f32) window_width / (f32) window_height;
     f32 viewport_height = 540;
     f32 viewport_width = aspect * viewport_height;
-    uniforms.projection = Ortho(0, viewport_width, viewport_height, 0, 0.1, 100);
-    uniforms.view = LookAt(v3(0, 0, 50), v3(0, 0, 0), v3(0, 1, 0));
+    // uniforms.projection = Ortho(0, viewport_width, viewport_height, 0, 0.1, 100);
+    uniforms.projection = perspective(45, aspect, 0.1, 1000);
+    uniforms.view = LookAt(render_data->camera_pos, render_data->camera_pos + render_data->camera_forward, v3(0, 1, 0));
 
     glBindBuffer(GL_UNIFORM_BUFFER, uniform_buffer);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UniformBuffer), &uniforms);
@@ -189,7 +192,7 @@ void DrawFrame(RenderData *render_data, i32 window_width, i32 window_height)
 
     glViewport(0, 0, window_width, window_height);
     glClearColor(0.1, 0.1, 0.1, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glBindVertexArray(vertex_vao);
     glUseProgram(default_shader.id);

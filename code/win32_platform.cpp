@@ -14,11 +14,17 @@
 #include "game_math.cpp"
 #include "opengl_renderer.cpp"
 
+// #ifndef DEBUG
 #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
+// #endif
 
 GLFWwindow *window;
 i32 window_width = 960;
 i32 window_height = 540;
+
+V2 mouse_pos = {};
+V2 prev_mouse_pos = {};
+bool mouse_pos_updated = false;
 
 GameAssets assets = {};
 
@@ -44,17 +50,6 @@ char key_mapping[] = {
 };
 
 bool prev_key_states[Key_Count] = {};
-
-bool IsKeyDown(Key key)
-{
-    // NOTE: GLFW_KEY_W is equal to 'W'. GLFW uses ascii uppercase letters!!!
-    return glfwGetKey(window, key_mapping[key]) == GLFW_PRESS;
-}
-
-bool IsKeyJustDown(Key key)
-{
-    return !prev_key_states[key] && IsKeyDown(key);
-}
 
 // File utils...
 //
@@ -88,6 +83,13 @@ void ResizeCallback(GLFWwindow *window, i32 width, i32 height)
 {
     window_width = width;
     window_height = height;
+}
+
+void MouseCallback(GLFWwindow *window, f64 mouse_x, f64 mouse_y)
+{
+    prev_mouse_pos = mouse_pos;
+    mouse_pos = v2(mouse_x, mouse_y);
+    mouse_pos_updated = true;
 }
 
 void APIENTRY DebugOutput(GLenum source, 
@@ -310,7 +312,7 @@ i32 main()
     assert(window);
 
     glfwSetFramebufferSizeCallback(window, ResizeCallback);
-    // glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetCursorPosCallback(window, MouseCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwMakeContextCurrent(window);
 
@@ -354,10 +356,22 @@ i32 main()
             glfwSetWindowShouldClose(window, true);
         }
 
+        if (!mouse_pos_updated)
+        {
+            prev_mouse_pos = mouse_pos;
+        }
+        else
+        {
+            mouse_pos_updated = false;
+        }
+
         GameInput input = {};
         input.time = time;
         input.delta = delta;
         input.prev_key_states = prev_key_states;
+        input.mouse_pos = mouse_pos;
+        input.prev_mouse_pos = prev_mouse_pos;
+
         for (u32 i = 0; i < Key_Count; ++i)
         {
             if (glfwGetKey(window, key_mapping[i]) == GLFW_PRESS)

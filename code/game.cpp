@@ -8,6 +8,7 @@
 
 #include "memory.cpp"
 #include "game_math.cpp"
+#include "camera.cpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -18,8 +19,6 @@ extern "C"
     __declspec(dllexport) RenderData * __stdcall GameUpdate(GameInput *input_data, GameAssets *assets, u8 *memory);
     __declspec(dllexport) void _stdcall GameInitialize(u8 *memory, u64 memory_size);
 }
-
-Player *player;
 
 GameInput *input;
 GameAssets *assets;
@@ -103,6 +102,8 @@ void GameInitialize(u8 *memory, u64 memory_size)
     arena->offset = sizeof(GameState);
 
     LoadState();
+
+    InitializeCamera(&state->camera, v3(0, 0, 50), v3(0, 0, -1));
 }
 
 RenderData *GameUpdate(GameInput *input_data, GameAssets *asset_data, u8 *memory)
@@ -111,8 +112,6 @@ RenderData *GameUpdate(GameInput *input_data, GameAssets *asset_data, u8 *memory
     assets = asset_data;
     state = (GameState *) memory;
     f32 delta = input->delta;
-    player = &state->player;
-    World *world = state->world;
 
     vertex_count = {};
     level_buffer = {};
@@ -124,6 +123,9 @@ RenderData *GameUpdate(GameInput *input_data, GameAssets *asset_data, u8 *memory
     {
         LoadState();
     }
+
+    UpdateCamera(&state->camera);
+    UpdateCameraMouse(&state->camera);
 
     // We render at 960 x 540
     // 0,0 ------------> 960,0
@@ -153,6 +155,9 @@ RenderData *GameUpdate(GameInput *input_data, GameAssets *asset_data, u8 *memory
     render->level = BufferToDraw(&level_buffer);
     render->entities = BufferToDraw(&entity_buffer);
     render->player = BufferToDraw(&player_buffer);
+
+    render->camera_pos = state->camera.pos;
+    render->camera_forward = state->camera.front;
 
     return render;
 }

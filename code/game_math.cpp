@@ -57,6 +57,11 @@ V3 V3::operator-(V3 b)
     return {x - b.x, y - b.y, z - b.z};
 }
 
+V3 V3::operator+(V3 b)
+{
+    return {x + b.x, y + b.y, z + b.z};
+}
+
 void V3::operator+=(V3 b)
 {
     x += b.x;
@@ -90,6 +95,20 @@ Mat4 Ortho(f32 l, f32 r, f32 b, f32 t, f32 n, f32 f)
         0, 0, -2/(f-n), 0,
         -(r+l)/(r-l), -(t+b)/(t-b), -(f+n)/(f-n), 1,
     };
+}
+
+Mat4 perspective(f32 fov, f32 aspect, f32 near_plane, f32 far_plane)
+{
+    Mat4 res = {};
+
+    float tan_fov = tan(fov / 2);
+    res.v[0] = 1.0f / (tan_fov * aspect);
+    res.v[5] = 1.0f / (tan_fov);
+    res.v[10] = -(far_plane + near_plane) / (far_plane - near_plane);
+    res.v[11] = -1;
+    res.v[14] = -(2 * near_plane * far_plane) / (far_plane - near_plane);
+
+    return res;
 }
 
 Mat4 LookAt(V3 eye, V3 target, V3 up)

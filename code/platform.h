@@ -32,6 +32,9 @@ struct GameInput
     f32 delta;
     u32 key_states;
     u32 prev_key_states;
+
+    V2 mouse_pos;
+    V2 prev_mouse_pos;
 };
 
 extern GameInput *input;
@@ -88,6 +91,9 @@ struct RenderData
 
     u32 mesh_count;
     Mesh meshes[16];
+
+    V3 camera_pos;
+    V3 camera_forward;
 };
 
 struct GameAssets
